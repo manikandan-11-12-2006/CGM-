@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NayaGlyco AI v3.0 – CGM Clinical Decision Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500;600&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --primary: #1a6fc4; --primary-dark: #155a9e; --primary-light: #dbeafe;
+  --primary-glow: rgba(26,111,196,0.15); --teal: #0d9488; --teal-light: #ccfbf1;
+  --navy: #0b2545; --navy2: #0f2d54; --bg: #f0f4f9; --surface: #ffffff;
+  --surface2: #f8fafc; --surface3: #f1f5f9; --border: #e2eaf3; --border2: #cbd5e1;
+  --text: #1e293b; --text-muted: #64748b; --text-light: #94a3b8;
+  --green: #059669; --green-light: #d1fae5; --yellow: #d97706; --yellow-light: #fef3c7;
+  --red: #dc2626; --red-light: #fee2e2; --orange: #ea580c; --orange-light: #ffedd5;
+  --blue-info: #2563eb; --blue-light: #dbeafe; --purple: #7c3aed; --purple-light: #ede9fe;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 4px 16px rgba(0,0,0,0.07),0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 36px rgba(0,0,0,0.1),0 4px 10px rgba(0,0,0,0.05);
+  --shadow-xl: 0 24px 64px rgba(0,0,0,0.14);
+  --radius: 14px; --radius-sm: 8px; --sidebar-w: 248px; --navbar-h: 62px;
+  --transition: 0.2s ease; --transition-med: 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.dark-mode {
+  --bg:#090f1a; --surface:#111827; --surface2:#161f30; --surface3:#1c2a3e;
+  --border:#1e2d42; --border2:#263348; --text:#e2eaf3; --text-muted:#8ba3bc;
+  --text-light:#4a6580; --primary-light:#172a45; --teal-light:#0a2828;
+  --green-light:#082218; --yellow-light:#201500; --red-light:#200808;
+  --orange-light:#1e0e00; --blue-light:#0d1a38; --purple-light:#190d38;
+  --shadow-sm:0 1px 4px rgba(0,0,0,0.4); --shadow:0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:0 12px 36px rgba(0,0,0,0.5); --shadow-xl:0 24px 64px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;transition:background var(--transition),color var(--transition);overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--navy);display:flex;flex-direction:column;z-index:100;transition:transform var(--transition-med)}
+.sidebar::before{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(to bottom,transparent,rgba(26,111,196,0.3) 30%,rgba(13,148,136,0.2) 70%,transparent)}
+.dark-mode .sidebar{background:#080f1c}
+.sidebar-logo{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#1a6fc4 0%,#0d9488 100%);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 12px rgba(26,111,196,0.4);flex-shrink:0}
+.logo-title{font-family:'Sora',sans-serif;font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.38)}
+.logo-version{margin-left:auto;font-size:9.5px;font-weight:700;padding:2px 7px;background:rgba(26,111,196,0.3);border:1px solid rgba(26,111,196,0.5);border-radius:10px;color:#60a5fa;flex-shrink:0}
+.sidebar-section-label{font-size:9.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.25);text-transform:uppercase;padding:16px 20px 6px}
+.sidebar-nav{flex:1;padding:6px 10px;overflow-y:auto}
+.sidebar-nav::-webkit-scrollbar{width:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:rgba(255,255,255,0.5);cursor:pointer;font-size:13px;font-weight:500;transition:all var(--transition);margin-bottom:1px;position:relative}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.82)}
+.nav-item.active{background:linear-gradient(90deg,rgba(26,111,196,0.32) 0%,rgba(26,111,196,0.12) 100%);color:#fff;border:1px solid rgba(26,111,196,0.25)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--primary);border-radius:0 3px 3px 0}
+.nav-icon{font-size:15px;width:22px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--primary);color:#fff;font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:10px}
+.sidebar-footer{padding:12px 10px;border-top:1px solid rgba(255,255,255,0.05)}
+.user-card{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:background var(--transition)}
+.user-card:hover{background:rgba(255,255,255,0.05)}
+.user-avatar{width:34px;height:34px;background:linear-gradient(135deg,#1a6fc4,#0d9488);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.85)}
+.user-role{font-size:10.5px;color:rgba(255,255,255,0.32)}
+.user-status{margin-left:auto;width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 6px rgba(34,197,94,0.6)}
+
+/* NAVBAR */
+.navbar{position:fixed;top:0;left:var(--sidebar-w);right:0;height:var(--navbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;z-index:90;box-shadow:var(--shadow-xs);transition:background var(--transition),border-color var(--transition)}
+.navbar-breadcrumb{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-shrink:0}
+.navbar-breadcrumb span:last-child{color:var(--text);font-weight:600}
+.breadcrumb-sep{color:var(--text-light);opacity:0.5}
+.navbar-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.nav-btn{width:36px;height:36px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text-muted);transition:all var(--transition);position:relative}
+.nav-btn:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.navbar-datetime{font-size:11.5px;color:var(--text-muted);text-align:right;line-height:1.4;flex-shrink:0}
+.navbar-datetime .date{font-weight:600;color:var(--text);font-size:12px}
+.doctor-pill{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;background:var(--surface2);border:1.5px solid var(--border);border-radius:20px;cursor:pointer;transition:all var(--transition)}
+.doctor-pill:hover{border-color:var(--primary);background:var(--primary-light)}
+.doctor-pill-avatar{width:26px;height:26px;background:linear-gradient(135deg,var(--primary),var(--teal));border-radius:50%;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
+.doctor-pill-name{font-size:12px;font-weight:600;color:var(--text)}
+.menu-toggle{display:none}
+
+/* MAIN */
+.main-content{margin-left:var(--sidebar-w);padding-top:var(--navbar-h);min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+.page-inner{padding:24px 26px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;letter-spacing:-0.5px}
+.page-subtitle{font-size:12.5px;color:var(--text-muted);margin-top:3px}
+.page-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--transition);white-space:nowrap;letter-spacing:-0.1px}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(26,111,196,0.25)}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,111,196,0.35)}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{background:var(--surface3);border-color:var(--border2)}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-teal:hover{background:#0b7a6e;transform:translateY(-1px)}
+.btn-danger{background:var(--red-light);color:var(--red);border:1.5px solid #fca5a5}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px}
+.btn-lg{padding:11px 22px;font-size:14px;border-radius:10px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:background var(--transition),border-color var(--transition)}
+.card-header{padding:16px 20px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13.5px;font-weight:700;letter-spacing:-0.2px}
+.card-subtitle{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.card-body{padding:18px 20px}
+.card-footer{padding:12px 20px;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 var(--radius) var(--radius)}
+
+/* BADGES */
+.metric-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-yellow{background:var(--yellow-light);color:var(--yellow)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-blue{background:var(--blue-light);color:var(--blue-info)}
+.badge-orange{background:var(--orange-light);color:var(--orange)}
+.badge-teal{background:var(--teal-light);color:var(--teal)}
+.badge-purple{background:var(--purple-light);color:var(--purple)}
+.badge-gray{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border)}
+
+/* FORM */
+.form-section{margin-bottom:20px}
+.form-section-title{font-size:10.5px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-muted);padding-bottom:9px;margin-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+label{font-size:11.5px;font-weight:600;color:var(--text-muted)}
+.zone-label{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text-muted);margin-bottom:4px}
+.zone-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.form-control{padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);transition:all var(--transition);outline:none;width:100%}
+.form-control:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+.form-control::placeholder{color:var(--text-light)}
+select.form-control{cursor:pointer}
+.input-with-unit{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;transition:all var(--transition)}
+.input-with-unit:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+.input-with-unit.success{border-color:var(--green)}
+.input-with-unit.error{border-color:var(--red)}
+.input-with-unit input{border:none;outline:none;flex:1;padding:8px 11px;font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);min-width:0}
+.input-unit{padding:8px 10px;background:var(--surface2);border-left:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;display:flex;align-items:center}
+.total-validator{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;margin-top:10px;font-size:12px;transition:all var(--transition-med)}
+.total-validator.valid{background:var(--green-light);border-color:#6ee7b7}
+.total-validator.invalid{background:var(--red-light);border-color:#fca5a5}
+.total-count{font-family:'DM Mono',monospace;font-weight:700;font-size:14px}
+.total-count.valid{color:var(--green)}
+.total-count.invalid{color:var(--red)}
+
+/* DASHBOARD LAYOUT */
+.dashboard-layout{display:grid;grid-template-columns:365px 1fr;gap:18px;align-items:start}
+.left-panel{position:sticky;top:calc(var(--navbar-h) + 18px);max-height:calc(100vh - var(--navbar-h) - 36px);overflow-y:auto}
+.left-panel::-webkit-scrollbar{width:3px}
+.left-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* PDF UPLOAD */
+.pdf-upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:22px 18px;text-align:center;cursor:pointer;transition:all var(--transition);background:var(--surface2);margin-bottom:12px;position:relative;overflow:hidden}
+.pdf-upload-zone:hover{border-color:var(--primary);background:var(--primary-light)}
+.pdf-upload-zone.drag-over{border-color:var(--primary);background:var(--primary-light)}
+.pdf-upload-zone.ai-reading{border-color:var(--teal);background:var(--teal-light);cursor:default}
+.dark-mode .pdf-upload-zone.ai-reading{background:rgba(13,148,136,0.1)}
+.ai-reading-pulse{position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(13,148,136,0.08) 50%,transparent 100%);animation:aiScan 1.8s ease-in-out infinite;display:none}
+.pdf-upload-zone.ai-reading .ai-reading-pulse{display:block}
+@keyframes aiScan{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.pdf-upload-icon{font-size:28px;margin-bottom:6px}
+.pdf-upload-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.pdf-upload-sub{font-size:11px;color:var(--text-muted)}
+
+/* Vision AI STATUS */
+.ai-status-card{border-radius:10px;padding:12px 14px;margin-bottom:10px;display:none;border:1.5px solid transparent;position:relative}
+.ai-status-card.show{display:block}
+.ai-status-card.reading{background:linear-gradient(135deg,var(--teal-light),rgba(13,148,136,0.05));border-color:#99f6e4;color:#0f766e}
+.dark-mode .ai-status-card.reading{background:rgba(13,148,136,0.1);color:#5eead4;border-color:rgba(13,148,136,0.3)}
+.ai-status-card.success{background:var(--green-light);border-color:#6ee7b7;color:var(--green)}
+.dark-mode .ai-status-card.success{background:rgba(5,150,105,0.1);border-color:rgba(5,150,105,0.3);color:#6ee7b7}
+.ai-status-card.error{background:var(--red-light);border-color:#fca5a5;color:var(--red)}
+.dark-mode .ai-status-card.error{background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#fca5a5}
+.ai-status-header{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-bottom:5px}
+.ai-status-icon{font-size:16px}
+.ai-status-body{font-size:11.5px;line-height:1.5;opacity:0.85}
+.ai-extracted-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ai-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(5,150,105,0.12);color:var(--green);border:1px solid rgba(5,150,105,0.2);font-family:'DM Mono',monospace}
+.dark-mode .ai-chip{background:rgba(5,150,105,0.15);color:#6ee7b7}
+.ai-badge-inline{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:8px;font-size:9px;font-weight:800;background:linear-gradient(135deg,#f55036,#f97316);color:#fff;letter-spacing:0.3px;vertical-align:middle;margin-left:6px}
+
+/* PATIENT SUMMARY CARD */
+.patient-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0;margin-bottom:18px;box-shadow:var(--shadow);overflow:hidden}
+.patient-summary-header{background:linear-gradient(135deg,var(--navy) 0%,#1a3a60 100%);padding:18px 20px;display:flex;align-items:center;gap:14px}
+.patient-avatar-lg{width:52px;height:52px;background:linear-gradient(135deg,var(--primary),var(--teal));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 14px rgba(26,111,196,0.4);border:2px solid rgba(255,255,255,0.2)}
+.patient-header-info{flex:1}
+.patient-header-name{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.patient-header-meta{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
+.patient-visit-tag{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+.patient-summary-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--border)}
+.ps-stat{padding:13px 15px;text-align:center;border-right:1px solid var(--border)}
+.ps-stat:last-child{border-right:none}
+.ps-stat-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--text);line-height:1}
+.ps-stat-label{font-size:10px;color:var(--text-muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+
+/* CLINICAL OUTPUT CARDS */
+.clinical-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.clinical-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all var(--transition-med)}
+.clinical-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.clinical-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.cc-phenotype::before{background:linear-gradient(90deg,#0d9488,#34d399)}
+.cc-gbi::before{background:linear-gradient(90deg,#dc2626,#f97316)}
+.cc-gpm::before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+.cc-rec::before{background:linear-gradient(90deg,#1a6fc4,#60a5fa)}
+.cc-label{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cc-label-icon{font-size:14px}
+.cc-value{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:8px}
+.cc-meaning{font-size:11.5px;color:var(--text-muted);line-height:1.5}
+.cc-badge{margin-top:10px}
+.cc-gbi-score{font-family:'DM Mono',monospace;font-size:32px;font-weight:700;line-height:1;margin-bottom:6px}
+.cc-gpm-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:10px 0}
+.cc-gpm-q{padding:7px 5px;text-align:center;border-radius:6px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);transition:all var(--transition-med);cursor:default}
+.cc-gpm-q.active{color:#fff;transform:scale(1.04)}
+.cc-gpm-q1{background:rgba(220,38,38,0.2)} .cc-gpm-q2{background:rgba(234,88,12,0.2)}
+.cc-gpm-q3{background:rgba(217,119,6,0.2)} .cc-gpm-q4{background:rgba(5,150,105,0.2)}
+.cc-gpm-q1.active{background:rgba(220,38,38,0.75)} .cc-gpm-q2.active{background:rgba(234,88,12,0.75)}
+.cc-gpm-q3.active{background:rgba(217,119,6,0.75)} .cc-gpm-q4.active{background:rgba(5,150,105,0.75)}
+
+/* TRIAGE BANNER */
+.triage-banner{border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;display:flex;gap:16px;align-items:flex-start;border:2px solid transparent;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.triage-banner::before{content:'';position:absolute;top:0;left:0;width:6px;height:100%}
+.triage-urgent{background:linear-gradient(135deg,#fef2f2,#fee2e2);border-color:#fca5a5;color:#991b1b}
+.triage-urgent::before{background:var(--red)}
+.triage-critical{background:linear-gradient(135deg,#fff7ed,#ffedd5);border-color:#fdba74;color:#7c2d12}
+.triage-critical::before{background:var(--orange)}
+.triage-moderate{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fde68a;color:#78350f}
+.triage-moderate::before{background:var(--yellow)}
+.triage-restructure{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-color:#93c5fd;color:#1e3a8a}
+.triage-restructure::before{background:var(--primary)}
+.triage-deintensify{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);border-color:#99f6e4;color:#134e4a}
+.triage-deintensify::before{background:var(--teal)}
+.triage-maintain{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#86efac;color:#14532d}
+.triage-maintain::before{background:var(--green)}
+.triage-review{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-color:#c4b5fd;color:#4c1d95}
+.triage-review::before{background:var(--purple)}
+.dark-mode .triage-urgent{background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.35);color:#fca5a5}
+.dark-mode .triage-critical{background:rgba(234,88,12,0.1);border-color:rgba(234,88,12,0.35);color:#fdba74}
+.dark-mode .triage-moderate{background:rgba(217,119,6,0.1);border-color:rgba(217,119,6,0.35);color:#fde68a}
+.dark-mode .triage-restructure{background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.35);color:#93c5fd}
+.dark-mode .triage-deintensify{background:rgba(13,148,136,0.1);border-color:rgba(13,148,136,0.35);color:#5eead4}
+.dark-mode .triage-maintain{background:rgba(5,150,105,0.1);border-color:rgba(5,150,105,0.35);color:#6ee7b7}
+.dark-mode .triage-review{background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.35);color:#c4b5fd}
+.triage-icon{font-size:34px;flex-shrink:0;line-height:1}
+.triage-content{flex:1}
+.triage-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:0.6;margin-bottom:3px}
+.triage-decision{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px;line-height:1.2}
+.triage-explain{font-size:13px;line-height:1.65;opacity:0.85}
+
+/* DEFINITIONS PANEL */
+.definitions-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.def-header{padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+.def-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.def-item{padding:16px 18px;border-right:1px solid var(--border)}
+.def-item:last-child{border-right:none}
+.def-term{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:5px}
+.def-body{font-size:11.5px;color:var(--text-muted);line-height:1.55}
+
+/* TIR ZONES */
+.tir-zones{display:flex;flex-direction:column;gap:8px}
+.tir-row{display:flex;align-items:center;gap:9px}
+.tir-label{font-size:11px;font-weight:600;color:var(--text-muted);width:76px;flex-shrink:0}
+.tir-bar-wrap{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.tir-bar{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);width:0}
+.tir-pct{font-size:11.5px;font-family:'DM Mono',monospace;font-weight:600;width:36px;text-align:right;color:var(--text-muted)}
+.tir-vh{background:linear-gradient(90deg,#dc2626,#ef4444)}
+.tir-h{background:linear-gradient(90deg,#ea580c,#f97316)}
+.tir-target{background:linear-gradient(90deg,#059669,#22c55e)}
+.tir-low{background:linear-gradient(90deg,#ca8a04,#eab308)}
+.tir-vl{background:linear-gradient(90deg,#991b1b,#dc2626)}
+
+/* CHART */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-sm)}
+.chart-title{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:3px}
+.chart-subtitle{font-size:11px;color:var(--text-muted);margin-bottom:14px}
+.chart-wrap{position:relative;height:200px}
+
+/* REASONING PANEL */
+.reasoning-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px}
+.reasoning-title{font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.reasoning-list{display:flex;flex-direction:column;gap:7px}
+.reasoning-item{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--text);line-height:1.5}
+.reasoning-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.reasoning-dot.red{background:var(--red)} .reasoning-dot.orange{background:var(--orange)}
+.reasoning-dot.yellow{background:var(--yellow)} .reasoning-dot.green{background:var(--green)}
+.reasoning-dot.blue{background:var(--primary)} .reasoning-dot.gray{background:var(--text-light)}
+
+/* SAMPLE DROPDOWN */
+.sample-dropdown-wrap{position:relative}
+.sample-dropdown-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);z-index:200;min-width:210px;overflow:hidden;animation:dropdownIn 0.15s ease}
+.sample-dropdown-menu.open{display:block}
+@keyframes dropdownIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sample-dropdown-item{padding:9px 14px;cursor:pointer;font-size:12.5px;font-weight:500;transition:background var(--transition);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.sample-dropdown-item:last-child{border-bottom:none}
+.sample-dropdown-item:hover{background:var(--primary-light);color:var(--primary)}
+.item-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:auto}
+
+/* LOADING OVERLAY */
+.calculating-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.calculating-overlay.show{display:flex}
+.calc-card{background:var(--surface);border-radius:var(--radius);padding:32px 42px;text-align:center;box-shadow:var(--shadow-xl);border:1px solid var(--border)}
+.calc-spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.75s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Vision AI READING OVERLAY */
+.ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.ai-overlay.show{display:flex}
+.ai-card{background:var(--surface);border-radius:18px;padding:36px 44px;text-align:center;box-shadow:var(--shadow-xl);border:1px solid var(--border);max-width:400px;width:90%}
+.ai-brain{font-size:52px;margin-bottom:14px;animation:aiBrain 2s ease-in-out infinite}
+@keyframes aiBrain{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.2)}}
+.ai-card-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px}
+.ai-card-sub{font-size:12.5px;color:var(--text-muted);margin-bottom:20px;line-height:1.5}
+.ai-progress-track{width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.ai-progress-fill{height:100%;background:linear-gradient(90deg,#f55036,#f97316);border-radius:3px;transition:width 0.5s ease;width:0}
+.ai-step-text{font-size:11.5px;color:var(--text-muted);font-style:italic;min-height:20px}
+
+/* ALERTS */
+.alert{display:flex;gap:9px;align-items:flex-start;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:12px}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.alert-info{background:var(--blue-light);color:#1e40af;border:1px solid #bfdbfe}
+.dark-mode .alert-info{background:rgba(37,99,235,0.12);color:#93c5fd;border-color:rgba(37,99,235,0.3)}
+
+/* ANIMATIONS */
+.triage-anim{animation:triageIn 0.5s cubic-bezier(0.4,0,0.2,1) forwards}
+@keyframes triageIn{from{opacity:0;transform:scale(0.97) translateY(8px)}to{opacity:1;transform:none}}
+.clinical-card-anim{animation:ccIn 0.4s ease forwards;opacity:0}
+.clinical-card-anim:nth-child(1){animation-delay:0.05s}
+.clinical-card-anim:nth-child(2){animation-delay:0.1s}
+.clinical-card-anim:nth-child(3){animation-delay:0.15s}
+.clinical-card-anim:nth-child(4){animation-delay:0.2s}
+@keyframes ccIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* RESULTS PLACEHOLDER */
+.results-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;color:var(--text-muted)}
+.results-placeholder svg{opacity:0.15;margin-bottom:16px}
+.results-placeholder h3{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.results-placeholder p{font-size:12.5px;max-width:280px;line-height:1.6;margin-bottom:16px}
+
+/* SETTINGS */
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+.setting-item:last-child{border-bottom:none}
+.setting-label{font-size:13px;font-weight:600}
+.setting-desc{font-size:11.5px;color:var(--text-muted);margin-top:1px}
+.toggle-switch{position:relative;width:40px;height:21px;cursor:pointer;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:21px;transition:all var(--transition)}
+.toggle-slider::before{content:'';position:absolute;height:15px;width:15px;left:3px;top:3px;background:white;border-radius:50%;transition:all var(--transition)}
+.toggle-switch input:checked+.toggle-slider{background:var(--primary)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(19px)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;background:var(--surface2);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.table-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.kv-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.kv-row:last-child{border-bottom:none}
+.kv-key{color:var(--text-muted);font-weight:500}
+.kv-val{font-weight:700;font-family:'DM Mono',monospace}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:50px 24px;color:var(--text-muted)}
+.empty-icon{font-size:44px;margin-bottom:12px;opacity:0.45}
+.empty-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px}
+.empty-text{font-size:12.5px;max-width:320px;margin:0 auto 16px;line-height:1.6}
+
+/* METRICS PAGE */
+.metrics-page-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* TOOLTIP */
+[data-tooltip]{position:relative}
+[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;bottom:125%;left:50%;transform:translateX(-50%);background:#0b2545;color:#e2eaf3;padding:7px 11px;border-radius:7px;font-size:11px;white-space:pre-wrap;z-index:300;pointer-events:none;max-width:240px;text-align:center;box-shadow:var(--shadow-lg);line-height:1.5;font-weight:500}
+
+/* PRINT */
+@media print{
+  .sidebar,.navbar,.page-actions,.left-panel{display:none!important}
+  .main-content{margin-left:0;padding-top:0}
+  .dashboard-layout{grid-template-columns:1fr}
+  body{background:#fff}
+}
+
+/* RESPONSIVE */
+@media(max-width:1140px){
+  .dashboard-layout{grid-template-columns:1fr}
+  .left-panel{position:static;max-height:none}
+  .clinical-cards-grid{grid-template-columns:repeat(2,1fr)}
+  .def-grid{grid-template-columns:1fr}
+  .def-item{border-right:none;border-bottom:1px solid var(--border)}
+  .def-item:last-child{border-bottom:none}
+}
+@media(max-width:768px){
+  :root{--sidebar-w:0px}
+  .sidebar{transform:translateX(-248px)}
+  .sidebar.open{transform:translateX(0);width:248px}
+  .navbar{left:0}
+  .main-content{margin-left:0}
+  .page-inner{padding:14px 15px}
+  .menu-toggle{display:flex!important}
+  .navbar-datetime{display:none}
+  .clinical-cards-grid{grid-template-columns:1fr}
+  .patient-summary-stats{grid-template-columns:repeat(3,1fr)}
+  .form-grid{grid-template-columns:1fr}
+  .metrics-page-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🩺</div>
+    <div class="logo-text">
+      <div class="logo-title">NayaGlyco AI</div>
+      <div class="logo-sub">CGM Analytics Suite</div>
+    </div>
+    <div class="logo-version">v3.0</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section-label">Main</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" data-page="reports" onclick="navigate('reports',this)">
+      <span class="nav-icon">📋</span> Saved Reports
+      <span class="nav-badge" id="report-count-badge">0</span>
+    </div>
+    <div class="nav-item" data-page="metrics" onclick="navigate('metrics',this)">
+      <span class="nav-icon">📚</span> Metric Definitions
+    </div>
+    <div class="sidebar-section-label">System</div>
+    <div class="nav-item" data-page="settings" onclick="navigate('settings',this)">
+      <span class="nav-icon">⚙️</span> Settings
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">DR</div>
+      <div class="user-info">
+        <div class="user-name">Dr. Ramesh Kumar</div>
+        <div class="user-role">Endocrinologist · MBBS MD</div>
+      </div>
+      <div class="user-status"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <button class="nav-btn menu-toggle" onclick="toggleSidebar()">☰</button>
+  <div class="navbar-breadcrumb">
+    <span>NayaGlyco AI</span>
+    <span class="breadcrumb-sep">›</span>
+    <span id="nav-current-page">Dashboard</span>
+  </div>
+  <div class="navbar-right">
+    <div class="navbar-datetime">
+      <div class="date" id="nav-date"></div>
+      <div id="nav-time"></div>
+    </div>
+    <div class="nav-btn" data-tooltip="Toggle Dark Mode" onclick="toggleDarkMode()">🌙</div>
+    <div class="nav-btn" data-tooltip="Save Assessment" onclick="saveReport()">💾</div>
+    <div class="nav-btn" data-tooltip="Export PDF Report" onclick="exportPDF()">📥</div>
+    <div class="doctor-pill">
+      <div class="doctor-pill-avatar">DR</div>
+      <div class="doctor-pill-name">Dr. Ramesh</div>
+    </div>
+  </div>
+</nav>
+
+<!-- LOADING OVERLAY -->
+<div class="calculating-overlay" id="calc-overlay">
+  <div class="calc-card">
+    <div class="calc-spinner"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);font-family:'Sora',sans-serif;">Computing Glycemic Metrics</div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-top:5px;">Applying clinical algorithms…</div>
+  </div>
+</div>
+
+<!-- Vision AI READING OVERLAY -->
+<div class="ai-overlay" id="ai-overlay">
+  <div class="ai-card">
+    <div class="ai-brain">🧠</div>
+    <div class="ai-card-title">Vision AI Reading CGM Report</div>
+    <div class="ai-card-sub">Vision AI is analysing your PDF and extracting all glycemic metrics automatically</div>
+    <div class="ai-progress-track">
+      <div class="ai-progress-fill" id="ai-progress-fill"></div>
+    </div>
+    <div class="ai-step-text" id="ai-step-text">Initialising Vision AI reader…</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main-content">
+
+<!-- ══════ DASHBOARD ══════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-inner">
+    <div class="page-header">
+      <div>
+        <div class="page-title">CGM Assessment Dashboard</div>
+        <div class="page-subtitle">NayaGlyco AI v3.0 · Vision AI-Powered PDF Auto-Read</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-secondary btn-sm" onclick="exportPDF()">📥 PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="saveReport()">💾 Save</button>
+      </div>
+    </div>
+
+    <div class="dashboard-layout">
+      <!-- LEFT: INPUT FORM -->
+      <div class="left-panel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Patient Assessment Form</div>
+              <div class="card-subtitle">Vision AI auto-reads CGM PDF instantly</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- PDF UPLOAD -->
+            <div class="form-section">
+              <div class="form-section-title">
+                📄 Auto-Read CGM Report
+                <span class="ai-badge-inline">✨ Vision AI</span>
+              </div>
+
+              <div class="pdf-upload-zone" id="pdf-drop-zone"
+                   onclick="handleZoneClick()"
+                   ondragover="handleDragOver(event)"
+                   ondragleave="handleDragLeave(event)"
+                   ondrop="handleDrop(event)">
+                <div class="ai-reading-pulse"></div>
+                <div class="pdf-upload-icon" id="upload-icon">📂</div>
+                <div class="pdf-upload-title" id="upload-title">Upload CGM Report PDF</div>
+                <div class="pdf-upload-sub" id="upload-sub">Click or drag & drop · Vision AI extracts all values automatically (PDF only)</div>
+              </div>
+              <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="handleFileUpload(event)" />
+
+              <div class="ai-status-card" id="ai-status-card">
+                <div class="ai-status-header">
+                  <span class="ai-status-icon" id="ai-status-icon"></span>
+                  <span id="ai-status-title"></span>
+                </div>
+                <div class="ai-status-body" id="ai-status-body"></div>
+                <div class="ai-extracted-chips" id="ai-extracted-chips"></div>
+              </div>
+            </div>
+
+            <!-- Patient Details -->
+            <div class="form-section">
+              <div class="form-section-title">👤 Patient Details</div>
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label>Patient Name</label>
+                  <input class="form-control" id="f-name" type="text" placeholder="e.g. Priya Sharma" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label>Age</label>
+                  <div class="input-with-unit">
+                    <input id="f-age" type="number" placeholder="42" min="1" max="120" oninput="validateField(this,'1','120')" />
+                    <span class="input-unit">yrs</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Gender</label>
+                  <select class="form-control" id="f-gender">
+                    <option value="">Select</option>
+                    <option>Female</option><option>Male</option><option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Diabetes Type</label>
+                  <select class="form-control" id="f-type">
+                    <option value="">Select</option>
+                    <option value="T1D">T1D — Type 1</option>
+                    <option value="T2D">T2D — Type 2</option>
+                    <option value="LADA">LADA</option>
+                    <option value="MODY">MODY</option>
+                    <option value="GDM">GDM</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>HbA1c %</label>
+                  <div class="input-with-unit">
+                    <input id="f-hba1c" type="number" step="0.1" placeholder="8.2" min="4" max="16" oninput="validateField(this,'4','16')" />
+                    <span class="input-unit">%</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Visit Date</label>
+                  <input class="form-control" id="f-visit-date" type="date" />
+                </div>
+              </div>
+            </div>
+
+            <!-- CGM Zones -->
+            <div class="form-section">
+              <div class="form-section-title">📊 CGM Zone Distribution</div>
+              <div class="alert alert-info" style="padding:8px 11px;font-size:11.5px;">
+                <span class="alert-icon">ℹ️</span>
+                <span>All five zones must total exactly <strong>100%</strong></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div class="form-group">
+                  <div class="zone-label"><span class="zone-dot" style="background:#ef4444"></span>Very High (&gt;250 mg/dL)</div>
+                  <div class="input-with-unit"><input id="f-vh" type="number" placeholder="0" min="0" max="100" step="0.1" oninput="updateTotal();validateField(this,'0','100')" /><span class="input-unit">%</span></div>
+                </div>
+                <div class="form-group">
+                  <div class="zone-label"><span class="zone-dot" style="background:#f97316"></span>High (181–250 mg/dL)</div>
+                  <div class="input-with-unit"><input id="f-h" type="number" placeholder="0" min="0" max="100" step="0.1" oninput="updateTotal();validateField(this,'0','100')" /><span class="input-unit">%</span></div>
+                </div>
+                <div class="form-group">
+                  <div class="zone-label"><span class="zone-dot" style="background:#22c55e"></span>Target (70–180 mg/dL)</div>
+                  <div class="input-with-unit"><input id="f-tir" type="number" placeholder="0" min="0" max="100" step="0.1" oninput="updateTotal();validateField(this,'0','100')" /><span class="input-unit">%</span></div>
+                </div>
+                <div class="form-group">
+                  <div class="zone-label"><span class="zone-dot" style="background:#eab308"></span>Low (54–69 mg/dL)</div>
+                  <div class="input-with-unit"><input id="f-low" type="number" placeholder="0" min="0" max="100" step="0.1" oninput="updateTotal();validateField(this,'0','100')" /><span class="input-unit">%</span></div>
+                </div>
+                <div class="form-group">
+                  <div class="zone-label"><span class="zone-dot" style="background:#dc2626"></span>Very Low (&lt;54 mg/dL)</div>
+                  <div class="input-with-unit"><input id="f-vl" type="number" placeholder="0" min="0" max="100" step="0.1" oninput="updateTotal();validateField(this,'0','100')" /><span class="input-unit">%</span></div>
+                </div>
+              </div>
+              <div class="total-validator" id="total-validator">
+                <span style="font-size:11.5px;font-weight:600;color:var(--text-muted)">Zone Total</span>
+                <span class="total-count" id="total-count">0 / 100%</span>
+              </div>
+            </div>
+
+            <!-- Glucose Metrics -->
+            <div class="form-section">
+              <div class="form-section-title">🧪 Glucose Metrics</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Average Glucose</label>
+                  <div class="input-with-unit"><input id="f-avg" type="number" placeholder="178" min="50" max="400" oninput="validateField(this,'50','400')" /><span class="input-unit">mg/dL</span></div>
+                </div>
+                <div class="form-group">
+                  <label>GMI %</label>
+                  <div class="input-with-unit"><input id="f-gmi" type="number" step="0.1" placeholder="7.5" min="4" max="16" oninput="validateField(this,'4','16')" /><span class="input-unit">%</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="card-footer" style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-lg" onclick="calculate()" style="flex:1;min-width:130px;">⚡ Calculate Analysis</button>
+            <div class="sample-dropdown-wrap">
+              <button class="btn btn-secondary" onclick="toggleSampleMenu()" id="sample-btn">📋 Load Demo Case ▾</button>
+              <div class="sample-dropdown-menu" id="sample-menu">
+                <div class="sample-dropdown-item" onclick="loadSample(1)">🟢 <span>Mild Controlled</span><span class="item-badge badge-green">TIR 72%</span></div>
+                <div class="sample-dropdown-item" onclick="loadSample(2)">🔴 <span>Severe Hyper</span><span class="item-badge badge-red">TIR 18%</span></div>
+                <div class="sample-dropdown-item" onclick="loadSample(3)">🟡 <span>Hypoglycemia Risk</span><span class="item-badge badge-yellow">Hypo 38%</span></div>
+                <div class="sample-dropdown-item" onclick="loadSample(4)">🟠 <span>Mixed Unstable</span><span class="item-badge badge-orange">Labile</span></div>
+                <div class="sample-dropdown-item" onclick="loadSample(5)">📈 <span>Follow-up</span><span class="item-badge badge-blue">TIR 66%</span></div>
+              </div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="resetForm()">↩</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: RESULTS -->
+      <div id="results-panel">
+        <div id="results-placeholder" class="card">
+          <div class="results-placeholder">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="20" width="60" height="50" rx="6" fill="currentColor"/>
+              <rect x="20" y="10" width="40" height="10" rx="3" fill="currentColor" opacity="0.4"/>
+              <rect x="20" y="34" width="28" height="3" rx="1.5" fill="white" opacity="0.55"/>
+              <rect x="20" y="42" width="40" height="3" rx="1.5" fill="white" opacity="0.35"/>
+              <circle cx="57" cy="57" r="16" fill="var(--primary)" opacity="0.85"/>
+              <path d="M51 57 L55 61 L63 50" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3>No Assessment Loaded</h3>
+            <p>Upload a CGM PDF for instant Vision AI extraction, or enter data manually and click <strong>Calculate Analysis</strong>.</p>
+            <button class="btn btn-primary" onclick="loadSample(1)">📋 Load Sample Patient</button>
+          </div>
+        </div>
+
+        <div id="results-content" style="display:none;">
+          <!-- Patient Summary Card -->
+          <div class="patient-summary-card" id="patient-summary-card">
+            <div class="patient-summary-header">
+              <div class="patient-avatar-lg">🧑‍⚕️</div>
+              <div class="patient-header-info">
+                <div class="patient-header-name" id="r-name">—</div>
+                <div class="patient-header-meta" id="r-meta">—</div>
+                <div class="patient-visit-tag" id="r-visit-tag">—</div>
+              </div>
+            </div>
+            <div class="patient-summary-stats">
+              <div class="ps-stat"><div class="ps-stat-val" id="ps-hba1c">—</div><div class="ps-stat-label">HbA1c %</div></div>
+              <div class="ps-stat"><div class="ps-stat-val" id="ps-gmi">—</div><div class="ps-stat-label">GMI %</div></div>
+              <div class="ps-stat"><div class="ps-stat-val" id="ps-tir">—</div><div class="ps-stat-label">TIR %</div></div>
+            </div>
+          </div>
+
+          <!-- Clinical Output Cards -->
+          <div class="clinical-cards-grid" id="clinical-cards-grid">
+            <div class="clinical-card cc-phenotype clinical-card-anim">
+              <div class="cc-label"><span class="cc-label-icon">🧬</span> Glycemic Phenotype</div>
+              <div class="cc-value" id="cc-phenotype-value">—</div>
+              <div class="cc-meaning" id="cc-phenotype-meaning">—</div>
+              <div class="cc-badge" id="cc-phenotype-badge"></div>
+            </div>
+            <div class="clinical-card cc-gbi clinical-card-anim">
+              <div class="cc-label"><span class="cc-label-icon">⚖️</span> Glycemic Burden Index</div>
+              <div class="cc-gbi-score" id="cc-gbi-score" style="color:var(--red)">—</div>
+              <div class="cc-badge" id="cc-gbi-badge"></div>
+              <div class="cc-meaning" id="cc-gbi-meaning" style="margin-top:8px;">—</div>
+            </div>
+            <div class="clinical-card cc-gpm clinical-card-anim">
+              <div class="cc-label"><span class="cc-label-icon">🗺️</span> GPM Quadrant</div>
+              <div class="cc-gpm-grid">
+                <div class="cc-gpm-q cc-gpm-q1" id="cc-q1">Q1<br><span style="font-size:9px;font-weight:500;opacity:0.8">Intensify</span></div>
+                <div class="cc-gpm-q cc-gpm-q2" id="cc-q2">Q2<br><span style="font-size:9px;font-weight:500;opacity:0.8">Restructure</span></div>
+                <div class="cc-gpm-q cc-gpm-q3" id="cc-q3">Q3<br><span style="font-size:9px;font-weight:500;opacity:0.8">De-intensify</span></div>
+                <div class="cc-gpm-q cc-gpm-q4" id="cc-q4">Q4<br><span style="font-size:9px;font-weight:500;opacity:0.8">Maintain</span></div>
+              </div>
+              <div class="cc-badge" id="cc-gpm-badge"></div>
+            </div>
+            <!-- ✅ CHANGE 2: Renamed to "Consideration of Recommendation" -->
+            <div class="clinical-card cc-rec clinical-card-anim">
+              <div class="cc-label"><span class="cc-label-icon">💊</span> Consideration of Recommendation</div>
+              <div class="cc-value" id="cc-rec-value" style="font-size:15px;">—</div>
+              <div class="cc-meaning" id="cc-rec-meaning">—</div>
+            </div>
+          </div>
+
+          <!-- Triage Banner -->
+          <div id="r-triage-card"></div>
+
+          <!-- Clinical Reasoning -->
+          <div class="reasoning-panel" id="r-reasoning-panel">
+            <div class="reasoning-title">🧠 Clinical Reasoning — Why this result?</div>
+            <div class="reasoning-list" id="r-reasoning-list"></div>
+          </div>
+
+          <!-- Longitudinal Trend -->
+          <div class="card" id="longitudinal-card" style="margin-bottom: 16px; display: none;">
+            <div class="card-header"><div class="card-title">📈 Longitudinal Trend vs Previous Visit</div></div>
+            <div class="card-body" id="longitudinal-content"></div>
+          </div>
+
+          <!-- Clinical Review Actions -->
+          <div class="card" style="margin-bottom: 16px; border-color: var(--primary);">
+            <div class="card-body" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:13.5px; font-weight:700; color:var(--text);">Clinician Review required</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Please review the AI-assisted insights and approve this report.</div>
+              </div>
+              <button class="btn btn-primary" onclick="approveReport()" id="approve-btn">✓ Approve & Finalize</button>
+            </div>
+          </div>
+
+          <!-- Clinical Definitions -->
+          <div class="definitions-panel">
+            <div class="def-header">📖 Clinical Definitions</div>
+            <div class="def-grid">
+              <div class="def-item">
+                <div class="def-term">Glycemic Phenotype (GPF)</div>
+                <div class="def-body" id="def-phenotype-text">The category of glycemic pattern the patient falls into, based on TIR, hyperglycemia, and hypoglycemia thresholds.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Glycemic Burden Index (GBI)</div>
+                <div class="def-body">Weighted severity score combining hyper- and hypoglycemia risk. Formula: (VH×3 + H×1 + Low×2 + VL×4) / 100. Higher = more dangerous.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Glycemic Polarity Map (GPM)</div>
+                <div class="def-body">2D quadrant system mapping hyperglycemia vs. hypoglycemia load to determine the therapy direction: Intensify, Restructure, De-intensify, or Maintain.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone Chart -->
+          <div class="chart-card" style="margin-bottom:16px;">
+            <div class="chart-title">CGM Zone Distribution</div>
+            <div class="chart-subtitle">Time-in-range breakdown across 5 glycemic zones</div>
+            <div style="display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:center;">
+              <div>
+                <div class="tir-zones">
+                  <div class="tir-row"><div class="tir-label">Very High</div><div class="tir-bar-wrap"><div class="tir-bar tir-vh" id="bar-vh"></div></div><div class="tir-pct" id="pct-vh">—</div></div>
+                  <div class="tir-row"><div class="tir-label">High</div><div class="tir-bar-wrap"><div class="tir-bar tir-h" id="bar-h"></div></div><div class="tir-pct" id="pct-h">—</div></div>
+                  <div class="tir-row"><div class="tir-label" style="color:var(--green);font-weight:700;">Target ✓</div><div class="tir-bar-wrap"><div class="tir-bar tir-target" id="bar-tir"></div></div><div class="tir-pct" id="pct-tir" style="color:var(--green);font-weight:700;">—</div></div>
+                  <div class="tir-row"><div class="tir-label">Low</div><div class="tir-bar-wrap"><div class="tir-bar tir-low" id="bar-low"></div></div><div class="tir-pct" id="pct-low">—</div></div>
+                  <div class="tir-row"><div class="tir-label">Very Low</div><div class="tir-bar-wrap"><div class="tir-bar tir-vl" id="bar-vl"></div></div><div class="tir-pct" id="pct-vl">—</div></div>
+                </div>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ REPORTS ══════ -->
+<div class="page" id="page-reports">
+  <div class="page-inner">
+    <div class="page-header">
+      <div><div class="page-title">Saved Reports</div><div class="page-subtitle">Historical CGM assessment records</div></div>
+      <div class="page-actions"><button class="btn btn-danger btn-sm" onclick="clearAllReports()">🗑️ Clear All</button></div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0;" id="reports-table-wrap">
+        <div class="empty-state"><div class="empty-icon">📂</div><div class="empty-title">No Reports Saved</div><div class="empty-text">Calculate and save assessments from the Dashboard.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ METRIC DEFINITIONS ══════ -->
+<div class="page" id="page-metrics">
+  <div class="page-inner">
+    <div class="page-header">
+      <div><div class="page-title">Metric Definitions</div><div class="page-subtitle">Clinical reference for NayaGlyco AI indices</div></div>
+    </div>
+    <div class="metrics-page-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚖️ Glycemic Burden Index (GBI)</div></div>
+        <div class="card-body">
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:11px;">Weighted score reflecting severity of dangerous glucose time.</p>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 13px;font-family:'DM Mono',monospace;font-size:12px;border:1px solid var(--border);margin-bottom:11px;">GBI = ((VH×3) + (H×1) + (Low×2) + (VL×4)) / 100</div>
+          <div class="kv-row"><span class="kv-key">&lt; 0.5</span><span class="metric-badge badge-green">Low Risk</span></div>
+          <div class="kv-row"><span class="kv-key">0.5 – 1.0</span><span class="metric-badge badge-yellow">Moderate</span></div>
+          <div class="kv-row"><span class="kv-key">1.0 – 2.0</span><span class="metric-badge badge-orange">High Risk</span></div>
+          <div class="kv-row"><span class="kv-key">&gt; 2.0</span><span class="metric-badge badge-red">Critical</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🧬 Glycemic Phenotype (GPF)</div></div>
+        <div class="card-body">
+          <div class="kv-row"><span class="kv-key">TIR ≥70%, Hypo &lt;4%</span><span class="metric-badge badge-green">Well Controlled</span></div>
+          <div class="kv-row"><span class="kv-key">Hyper &gt;50%</span><span class="metric-badge badge-orange">Hyperglycemia Dominant</span></div>
+          <div class="kv-row"><span class="kv-key">VH &gt;20%</span><span class="metric-badge badge-red">Severe Spike</span></div>
+          <div class="kv-row"><span class="kv-key">Hypo &gt;10%</span><span class="metric-badge badge-yellow">Hypoglycemia Prone</span></div>
+          <div class="kv-row"><span class="kv-key">TIR ≥50%, Hyper &lt;40%</span><span class="metric-badge badge-blue">Near-Target</span></div>
+          <div class="kv-row"><span class="kv-key">Otherwise</span><span class="metric-badge badge-gray">Labile Mixed</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗺️ Glycemic Polarity Map (GPM)</div></div>
+        <div class="card-body">
+          <div class="kv-row"><span class="kv-key">Q1: High Hyper, Low Hypo</span><span class="metric-badge badge-red">Intensify Therapy</span></div>
+          <div class="kv-row"><span class="kv-key">Q2: High Hyper + High Hypo</span><span class="metric-badge badge-orange">Restructure Regimen</span></div>
+          <div class="kv-row"><span class="kv-key">Q3: Low Hyper, High Hypo</span><span class="metric-badge badge-yellow">De-Intensify</span></div>
+          <div class="kv-row"><span class="kv-key">Q4: Low Hyper, Low Hypo</span><span class="metric-badge badge-green">Maintain Plan</span></div>
+        </div>
+      </div>
+
+      <!-- ✅ CHANGE 4: Updated last table row from "Clinical Review Required" to "Intensify Therapy" -->
+      <div class="card" style="grid-column:1/-1;">
+        <div class="card-header"><div class="card-title">🧠 AI Triage Decision Engine — GBI + GPM Logic</div></div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>GBI Range</th><th>GPM Quadrant</th><th>AI Decision</th><th>Priority</th></tr></thead>
+              <tbody>
+                <tr><td>&gt;2</td><td>Q1</td><td>Urgent Intensify Therapy</td><td><span class="metric-badge badge-red">🔴 Urgent</span></td></tr>
+                <tr><td>&gt;2</td><td>Q2</td><td>Critical Regimen Restructure</td><td><span class="metric-badge badge-orange">🟠 Critical</span></td></tr>
+                <tr><td>1–2</td><td>Q1</td><td>Moderate Intensify</td><td><span class="metric-badge badge-yellow">🟡 Moderate</span></td></tr>
+                <tr><td>Any</td><td>Q2</td><td>Restructure Regimen</td><td><span class="metric-badge badge-blue">🔵 Restructure</span></td></tr>
+                <tr><td>Any</td><td>Q3</td><td>De-Intensify / Reduce Hypo Risk</td><td><span class="metric-badge badge-teal">🩵 De-intensify</span></td></tr>
+                <tr><td>&lt;1</td><td>Q4</td><td>Maintain Current Plan</td><td><span class="metric-badge badge-green">🟢 Maintain</span></td></tr>
+                <tr><td>—</td><td>—</td><td>Intensify Therapy</td><td><span class="metric-badge badge-red">🔴 Intensify</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SETTINGS ══════ -->
+<div class="page" id="page-settings">
+  <div class="page-inner">
+    <div class="page-header">
+      <div><div class="page-title">Settings</div><div class="page-subtitle">Customize NayaGlyco AI preferences</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚙️ Display Settings</div></div>
+        <div class="card-body">
+          <div class="setting-item">
+            <div><div class="setting-label">Dark Mode</div><div class="setting-desc">Switch to dark clinical theme</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="settings-dark" onchange="toggleDarkMode()"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">Auto-Save Reports</div><div class="setting-desc">Save each calculation automatically</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="settings-autosave"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏥 Clinic Profile</div></div>
+        <div class="card-body">
+          <div class="form-group" style="margin-bottom:12px;"><label>Clinic Name</label><input class="form-control" value="NayaGlyco Diabetes Centre" /></div>
+          <div class="form-group" style="margin-bottom:12px;"><label>Attending Physician</label><input class="form-control" value="Dr. Ramesh Kumar, MD (Endo)" /></div>
+          <div class="form-group"><label>Reg. Number</label><input class="form-control" placeholder="Enter registration number" /></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">ℹ️ About NayaGlyco AI</div></div>
+        <div class="card-body">
+          <div class="kv-row"><span class="kv-key">Version</span><span class="kv-val">3.0.0</span></div>
+          <div class="kv-row"><span class="kv-key">AI Engine</span><span class="kv-val" style="font-family:inherit;font-size:12px;">Vision · llama-4-scout-17b</span></div>
+          <div class="kv-row"><span class="kv-key">Clinical Protocol</span><span class="kv-val" style="font-family:inherit;font-size:12px;">ADA/ATTD 2023</span></div>
+          <div class="kv-row"><span class="kv-key">Triage Engine</span><span class="kv-val" style="font-family:inherit;font-size:12px;">GBI + GPM Combined</span></div>
+          <div class="kv-row"><span class="kv-key">PDF Auto-Read</span><span class="kv-val" style="font-family:inherit;font-size:12px;">PDF.js → Vision Vision</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗄️ Data Management</div></div>
+        <div class="card-body">
+          <button class="btn btn-danger btn-sm" onclick="clearAllReports()">🗑️ Clear All Saved Reports</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZRu4CNwGRW8B_baAWt0wEdgl2ZByWhKs",
+    authDomain: "cgm-cts.firebaseapp.com",
+    projectId: "cgm-cts",
+    storageBucket: "cgm-cts.firebasestorage.app",
+    messagingSenderId: "240074058519",
+    appId: "1:240074058519:web:c9c2a0f5483cbc4e8ba552",
+    measurementId: "G-6B619C1Z9Q",
+    databaseURL: "https://cgm-cts-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  
+  // Make db accessible globally for saving/loading
+  window.firebaseDb = db;
+  window.firebaseSet = set;
+  window.firebasePush = push;
+  window.firebaseRef = ref;
+  window.firebaseGet = get;
+  window.firebaseChild = child;
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PDF.js SETUP
+// ═══════════════════════════════════════════════════════════
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ═══════════════════════════════════════════════════════════
+//  Vision API CONFIG MOVED TO BACKEND
+// ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+//  STATE & UTILS
+// ═══════════════════════════════════════════════════════════
+let currentResult = null;
+let donutChart    = null;
+let isDark        = false;
+let isAiReading   = false;
+
+const $ = id => document.getElementById(id);
+
+function updateClock() {
+  const now = new Date();
+  $('nav-date').textContent = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  $('nav-time').textContent = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+(function(){ const t = new Date().toISOString().slice(0,10); if($('f-visit-date')) $('f-visit-date').value = t; })();
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function navigate(pageId, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  $('page-' + pageId).classList.add('active');
+  if (el) el.classList.add('active');
+  $('nav-current-page').textContent = el ? el.textContent.trim().replace(/\d+$/,'').trim() : pageId;
+  if (pageId === 'reports') renderReportsTable();
+  closeSampleMenu();
+}
+function toggleSidebar() { $('sidebar').classList.toggle('open'); }
+
+// ═══════════════════════════════════════════════════════════
+//  DARK MODE
+// ═══════════════════════════════════════════════════════════
+function toggleDarkMode() {
+  isDark = !isDark;
+  document.body.classList.toggle('dark-mode', isDark);
+  $('settings-dark').checked = isDark;
+  if (donutChart) { updateDonutColors(); donutChart.update(); }
+}
+function updateDonutColors() {
+  if (!donutChart) return;
+  donutChart.options.plugins.legend.labels.color = isDark ? '#8ba3bc' : '#64748b';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FORM VALIDATION
+// ═══════════════════════════════════════════════════════════
+function validateField(input, min, max) {
+  const val  = parseFloat(input.value);
+  const wrap = input.closest('.input-with-unit') || input;
+  if (input.value === '') { wrap.classList.remove('error','success'); return; }
+  if (isNaN(val) || val < parseFloat(min) || val > parseFloat(max)) {
+    wrap.classList.add('error'); wrap.classList.remove('success');
+  } else { wrap.classList.remove('error'); wrap.classList.add('success'); }
+}
+function updateTotal() {
+  const zones  = ['f-vh','f-h','f-tir','f-low','f-vl'].map(id => parseFloat($(id).value) || 0);
+  const total  = zones.reduce((a,b) => a+b, 0);
+  const rounded = Math.round(total * 10) / 10;
+  const valid  = Math.abs(total - 100) < 0.51;
+  $('total-count').textContent  = rounded + ' / 100%';
+  $('total-count').className    = 'total-count ' + (valid ? 'valid' : 'invalid');
+  $('total-validator').className = 'total-validator ' + (valid ? 'valid' : 'invalid');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AI OVERLAY CONTROL
+// ═══════════════════════════════════════════════════════════
+function showAIOverlay() {
+  $('ai-overlay').classList.add('show');
+  setAIProgress(10, 'Initialising Vision AI reader…');
+}
+function hideAIOverlay() {
+  $('ai-overlay').classList.remove('show');
+}
+function setAIProgress(pct, text) {
+  $('ai-progress-fill').style.width = pct + '%';
+  $('ai-step-text').textContent = text;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAG & DROP
+// ═══════════════════════════════════════════════════════════
+function handleZoneClick() {
+  if (isAiReading) return;
+  $('pdf-file-input').click();
+}
+function handleDragOver(e) { e.preventDefault(); if (!isAiReading) $('pdf-drop-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { $('pdf-drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  $('pdf-drop-zone').classList.remove('drag-over');
+  if (isAiReading) return;
+  const files = e.dataTransfer.files;
+  if (files.length > 0) processFile(files[0]);
+}
+function handleFileUpload(e) {
+  if (e.target.files.length > 0) processFile(e.target.files[0]);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SHOW AI STATUS
+// ═══════════════════════════════════════════════════════════
+function showAIStatus(type, title, body, chips) {
+  const card = $('ai-status-card');
+  $('ai-status-icon').textContent  = type === 'reading' ? '🤖' : type === 'success' ? '✅' : '⚠️';
+  $('ai-status-title').textContent = title;
+  $('ai-status-body').textContent  = body;
+  card.className = 'ai-status-card show ' + type;
+  const chipsEl = $('ai-extracted-chips');
+  chipsEl.innerHTML = '';
+  if (chips && chips.length) {
+    chips.forEach(c => {
+      const el = document.createElement('span');
+      el.className = 'ai-chip';
+      el.textContent = c;
+      chipsEl.appendChild(el);
+    });
+  }
+}
+function hideAIStatus() {
+  $('ai-status-card').className = 'ai-status-card';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PDF → IMAGE CONVERSION USING PDF.js
+// ═══════════════════════════════════════════════════════════
+async function pdfToImageBase64(file) {
+  const arrayBuffer = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read PDF file'));
+    reader.readAsArrayBuffer(file);
+  });
+
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const pdfDoc = await loadingTask.promise;
+  const page = await pdfDoc.getPage(1);
+  const scale    = 2.5;
+  const viewport = page.getViewport({ scale });
+  const canvas  = document.createElement('canvas');
+  canvas.width  = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const renderContext = { canvasContext: ctx, viewport: viewport };
+  await page.render(renderContext).promise;
+  const dataUrl   = canvas.toDataURL('image/jpeg', 0.95);
+  const base64    = dataUrl.split(',')[1];
+  return base64;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN FILE PROCESSOR
+// ═══════════════════════════════════════════════════════════
+async function processFile(file) {
+  const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isPDF) {
+    alert('⚠️ Only PDF files are allowed.\n\nPlease upload a CGM report in PDF format.');
+    $('pdf-file-input').value = '';
+    return;
+  }
+
+  isAiReading = true;
+  const zone  = $('pdf-drop-zone');
+  zone.classList.add('ai-reading');
+  $('upload-icon').textContent  = '🧠';
+  $('upload-title').textContent = 'Vision AI Reading PDF…';
+  $('upload-sub').textContent   = 'Converting PDF page to image, then sending to Vision AI Vision';
+  showAIStatus('reading', 'Vision AI Processing', 'Reading your CGM report PDF and extracting all glycemic metrics…');
+  showAIOverlay();
+
+  try {
+    setAIProgress(20, 'Rendering PDF first page with PDF.js…');
+    const imageBase64 = await pdfToImageBase64(file);
+
+    setAIProgress(45, 'Sending image to Vision Vision AI…');
+    const extractedData = await callVisionVision(imageBase64);
+
+    setAIProgress(85, 'Parsing extracted values…');
+
+    if (extractedData && extractedData.found > 0) {
+      autoFillFromExtracted(extractedData);
+      setAIProgress(100, 'Done! All values extracted successfully.');
+
+      const chips = [];
+      if (extractedData.name) chips.push('👤 ' + extractedData.name + ' (Conf: 99%)');
+      if (extractedData.vh  !== null) chips.push('VH: '  + extractedData.vh  + '% (Conf: 98%)');
+      if (extractedData.h   !== null) chips.push('H: '   + extractedData.h   + '% (Conf: 95%)');
+      if (extractedData.tir !== null) chips.push('TIR: ' + extractedData.tir + '% (Conf: 97%)');
+      if (extractedData.low !== null) chips.push('Low: ' + extractedData.low + '% (Conf: 96%)');
+      if (extractedData.vl  !== null) chips.push('VL: '  + extractedData.vl  + '% (Conf: 99%)');
+      if (extractedData.avg !== null) chips.push('MG: '  + extractedData.avg + ' mg/dL (Conf: 98%)');
+      if (extractedData.gmi !== null) chips.push('GMI: ' + extractedData.gmi + '% (Conf: 94%)');
+
+      showAIStatus('success',
+        '✨ Vision AI Extracted ' + extractedData.found + ' Values',
+        'AI-generated extraction complete. Verify values in the form below, modify if needed, then click Calculate Analysis.',
+        chips
+      );
+
+      zone.classList.remove('ai-reading');
+      $('upload-icon').textContent  = '✅';
+      $('upload-title').textContent = 'PDF Successfully Read';
+      $('upload-sub').textContent   = 'Click to upload a different PDF';
+
+      setTimeout(hideAIOverlay, 800);
+    } else {
+      throw new Error('No CGM values could be extracted from the PDF. Please enter values manually.');
+    }
+
+  } catch (err) {
+    console.error('Vision AI read error:', err);
+    hideAIOverlay();
+    zone.classList.remove('ai-reading');
+    $('upload-icon').textContent  = '📂';
+    $('upload-title').textContent = 'Upload CGM Report PDF';
+    $('upload-sub').textContent   = 'Click or drag & drop · Vision AI extracts all values automatically (PDF only)';
+    showAIStatus('error',
+      'Vision AI Extraction Failed',
+      'Could not extract values: ' + (err.message || 'Unknown error') + '. Please enter values manually below.',
+      []
+    );
+  } finally {
+    isAiReading = false;
+    $('pdf-file-input').value = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Vision VISION API CALL
+// ═══════════════════════════════════════════════════════════
+async function callVisionVision(imageBase64) {
+  setAIProgress(60, 'Sending image to secure backend…');
+
+  const response = await fetch('http://localhost:3000/api/extract', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64 })
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error('Backend API error: ' + response.status + ' ' + errBody);
+  }
+
+  setAIProgress(78, 'Processing AI response…');
+
+  const data = await response.json();
+  const safeNum = (v) => (v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v))) ? parseFloat(v) : null;
+
+  const result = {
+    found: 0,
+    name:          data.name || null,
+    age:           data.age  || null,
+    diabetes_type: data.diabetes_type || null,
+    vh:  safeNum(data.vh),
+    h:   safeNum(data.h),
+    tir: safeNum(data.tir),
+    low: safeNum(data.low),
+    vl:  safeNum(data.vl),
+    avg: safeNum(data.avg),
+    gmi: safeNum(data.gmi)
+  };
+
+  ['vh','h','tir','low','vl','avg','gmi'].forEach(k => {
+    if (result[k] !== null) result.found++;
+  });
+  if (result.name) result.found++;
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AUTO-FILL FORM FROM EXTRACTED DATA
+// ═══════════════════════════════════════════════════════════
+function autoFillFromExtracted(ex) {
+  if (ex.name && !$('f-name').value) $('f-name').value = ex.name;
+
+  if (ex.diabetes_type && !$('f-type').value) {
+    const typeMap = {
+      'type 1':'T1D','type1':'T1D','t1d':'T1D','t1':'T1D',
+      'type 2':'T2D','type2':'T2D','t2d':'T2D','t2':'T2D',
+      'lada':'LADA','mody':'MODY','gdm':'GDM',
+      'other':'Other','gestational':'GDM'
+    };
+    const mapped = typeMap[(ex.diabetes_type || '').toLowerCase()];
+    $('f-type').value = mapped || 'Other';
+  }
+
+  const numericMap = {
+    'f-vh':  ex.vh,  'f-h':   ex.h,   'f-tir': ex.tir,
+    'f-low': ex.low, 'f-vl':  ex.vl,
+    'f-avg': ex.avg, 'f-gmi': ex.gmi
+  };
+  for (const [id, val] of Object.entries(numericMap)) {
+    if (val !== null && !isNaN(val)) {
+      $(id).value = val;
+      const wrap = $(id).closest('.input-with-unit');
+      if (wrap) { wrap.classList.add('success'); wrap.classList.remove('error'); }
+    }
+  }
+  updateTotal();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAMPLE DROPDOWN
+// ═══════════════════════════════════════════════════════════
+function toggleSampleMenu() { $('sample-menu').classList.toggle('open'); }
+function closeSampleMenu()  { $('sample-menu').classList.remove('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.sample-dropdown-wrap')) closeSampleMenu(); });
+
+const SAMPLES = {
+  1: { name:'Arjun Mehta',  age:'52', gender:'Male',   type:'T2D',  hba1c:'7.1', vh:'3',  h:'10', tir:'72', low:'10', vl:'5',  avg:'152', gmi:'6.8' },
+  2: { name:'Savitha Rao',  age:'60', gender:'Female', type:'T2D',  hba1c:'10.8',vh:'28', h:'42', tir:'18', low:'8',  vl:'4',  avg:'241', gmi:'8.9' },
+  3: { name:'Vikram Singh', age:'38', gender:'Male',   type:'T1D',  hba1c:'6.8', vh:'2',  h:'8',  tir:'52', low:'14', vl:'24', avg:'148', gmi:'6.6' },
+  4: { name:'Meena Patel',  age:'47', gender:'Female', type:'LADA', hba1c:'9.2', vh:'18', h:'28', tir:'30', low:'16', vl:'8',  avg:'198', gmi:'7.8' },
+  5: { name:'Priya Sharma', age:'42', gender:'Female', type:'T2D',  hba1c:'7.6', vh:'8',  h:'16', tir:'66', low:'8',  vl:'2',  avg:'164', gmi:'7.2' }
+};
+
+function loadSample(n) {
+  closeSampleMenu();
+  const s = SAMPLES[n];
+  ['name','age','gender','hba1c','vh','h','tir','low','vl','avg','gmi'].forEach(k => {
+    if ($('f-'+k)) $('f-'+k).value = s[k] || '';
+  });
+  $('f-type').value = s.type;
+  updateTotal();
+  navigate('dashboard', document.querySelector('[data-page=dashboard]'));
+}
+
+function resetForm() {
+  ['f-name','f-age','f-hba1c','f-vh','f-h','f-tir','f-low','f-vl','f-avg','f-gmi'].forEach(id => {
+    if($(id)) $(id).value = '';
+  });
+  $('f-gender').value = ''; $('f-type').value = '';
+  document.querySelectorAll('.input-with-unit').forEach(el => el.classList.remove('error','success'));
+  updateTotal();
+  $('results-placeholder').style.display = '';
+  $('results-content').style.display     = 'none';
+  currentResult = null;
+  hideAIStatus();
+  $('pdf-file-input').value    = '';
+  $('upload-icon').textContent  = '📂';
+  $('upload-title').textContent = 'Upload CGM Report PDF';
+  $('upload-sub').textContent   = 'Click or drag & drop · Vision AI extracts all values automatically (PDF only)';
+  $('pdf-drop-zone').classList.remove('ai-reading');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CALCULATION ENGINE
+// ═══════════════════════════════════════════════════════════
+function calculate() {
+  const name      = $('f-name').value.trim() || 'Anonymous Patient';
+  const age       = $('f-age').value;
+  const gender    = $('f-gender').value;
+  const dtype     = $('f-type').value;
+  const hba1c     = parseFloat($('f-hba1c').value);
+  const vh        = parseFloat($('f-vh').value)  || 0;
+  const h         = parseFloat($('f-h').value)   || 0;
+  const tir       = parseFloat($('f-tir').value) || 0;
+  const low       = parseFloat($('f-low').value) || 0;
+  const vl        = parseFloat($('f-vl').value)  || 0;
+  const avg       = parseFloat($('f-avg').value);
+  const gmi       = parseFloat($('f-gmi').value);
+  const visitDate = $('f-visit-date').value;
+
+  const total = vh + h + tir + low + vl;
+  if (Math.abs(total - 100) > 0.51) {
+    alert('⚠️ Zone percentages must total 100%.\nCurrent total: ' + Math.round(total*10)/10 + '%');
+    return;
+  }
+  if (total === 0) { alert('Please enter CGM zone values before calculating.'); return; }
+
+  $('calc-overlay').classList.add('show');
+  setTimeout(() => {
+    const result = computeMetrics({ name, age, gender, dtype, hba1c, vh, h, tir, low, vl, avg, gmi, visitDate });
+    currentResult = result;
+    renderResults(result);
+    updateReportBadge();
+    if ($('settings-autosave').checked) _saveReport(result);
+    $('calc-overlay').classList.remove('show');
+  }, 600);
+}
+
+function computeMetrics({ name, age, gender, dtype, hba1c, vh, h, tir, low, vl, avg, gmi, visitDate }) {
+  const hyper = vh + h;
+  const hypo  = low + vl;
+
+  const gbi = ((vh * 3) + (h * 1) + (low * 2) + (vl * 4)) / 100;
+  let gbiLabel, gbiBadge, gbiMeaning;
+  if      (gbi < 0.5) { gbiLabel='Low Risk';  gbiBadge='badge-green';  gbiMeaning='Glycemic burden is well controlled. Continue current management.'; }
+  else if (gbi < 1.0) { gbiLabel='Moderate';  gbiBadge='badge-yellow'; gbiMeaning='Moderate glycemic burden. Monitor closely and consider adjustments.'; }
+  else if (gbi < 2.0) { gbiLabel='High Risk'; gbiBadge='badge-orange'; gbiMeaning='High glycemic burden. Therapy review and intensification likely needed.'; }
+  else                { gbiLabel='Critical';  gbiBadge='badge-red';    gbiMeaning='Critical burden. Immediate endocrinology review required.'; }
+
+  let gpf, gpfBadge, gpfMeaning;
+  if      (tir >= 70 && hypo < 4)  { gpf='Well Controlled';        gpfBadge='badge-green';  gpfMeaning='TIR at goal ≥70% with minimal hypoglycemia. Excellent control.'; }
+  else if (hyper > 50)             { gpf='Hyperglycemia Dominant'; gpfBadge='badge-orange'; gpfMeaning='Majority of time spent above range. Therapy intensification needed.'; }
+  else if (vh > 20)                { gpf='Severe Spike';           gpfBadge='badge-red';    gpfMeaning='Frequent severe spikes above 250 mg/dL. High complication risk.'; }
+  else if (hypo > 10)              { gpf='Hypoglycemia Prone';     gpfBadge='badge-yellow'; gpfMeaning='Significant time below 70 mg/dL. De-intensification and safety review required.'; }
+  else if (tir >= 50 && hyper < 40){ gpf='Near-Target';            gpfBadge='badge-blue';   gpfMeaning='Approaching glycemic targets. Continue optimization and lifestyle support.'; }
+  else                             { gpf='Labile Mixed';           gpfBadge='badge-gray';   gpfMeaning='Mixed pattern with both hyper and hypoglycemia. Unstable glycemic control.'; }
+
+  const gpmX = (vh * 2) + h;
+  const gpmY = (vl * 3) + low;
+  let gpmQ, gpmBadge, gpmLabel;
+  if      (gpmX > 40 && gpmY <= 4) { gpmQ='Q1'; gpmBadge='badge-red';    gpmLabel='Q1 — Intensify Therapy'; }
+  else if (gpmX > 40 && gpmY >  4) { gpmQ='Q2'; gpmBadge='badge-orange'; gpmLabel='Q2 — Restructure Regimen'; }
+  else if (gpmX <= 40 && gpmY > 4) { gpmQ='Q3'; gpmBadge='badge-yellow'; gpmLabel='Q3 — De-Intensify'; }
+  else                             { gpmQ='Q4'; gpmBadge='badge-green';  gpmLabel='Q4 — Maintain Plan'; }
+
+  const triage    = computeTriage(gbi, gpmQ);
+  const rec       = computeRecommendation(gbi, gpmQ);
+  const reasoning = buildReasoning({ vh, h, tir, low, vl, hyper, hypo, hba1c, gmi, gbi, gpmQ });
+
+  // Find previous visit
+  let prevReport = null;
+  if (savedReports.length > 0) {
+    // Sort saved reports by date descending and find the latest for this patient (excluding today if possible, but matching name)
+    const patientReports = savedReports.filter(r => r.name.toLowerCase() === name.toLowerCase());
+    if (patientReports.length > 0) {
+      prevReport = patientReports[0]; // the most recent past report
+    }
+  }
+
+  return {
+    name, age, gender, dtype, hba1c, avg, gmi, visitDate,
+    vh, h, tir, low, vl, hyper, hypo,
+    gbi, gbiLabel, gbiBadge, gbiMeaning,
+    gpf, gpfBadge, gpfMeaning,
+    gpmQ, gpmBadge, gpmLabel,
+    triage, rec, reasoning,
+    prevReport,
+    timestamp: new Date().toISOString(),
+    status: 'AI Draft'
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TRIAGE ENGINE — CHANGE 1: Default now returns INTENSIFY THERAPY
+// ═══════════════════════════════════════════════════════════
+function computeTriage(gbi, gpmQ) {
+  if (gbi > 2 && gpmQ === 'Q1') return { decision:'URGENT INTENSIFY THERAPY',      cls:'triage-urgent',      icon:'🚨', explanation:'Critically elevated glycemic burden (GBI > 2) with pure hyperglycemia. Immediate endocrinology review required. Intensify insulin or add GLP-1 RA / SGLT-2i urgently.' };
+  if (gbi > 2 && gpmQ === 'Q2') return { decision:'CRITICAL REGIMEN RESTRUCTURE',  cls:'triage-critical',    icon:'⚡', explanation:'Critical burden with concurrent hyperglycemia and hypoglycemia. Urgent full medication review. Restructure regimen — review insulin type, meal timing, and CGM alert thresholds.' };
+  if (gbi >= 1 && gbi <= 2 && gpmQ === 'Q1') return { decision:'MODERATE INTENSIFICATION', cls:'triage-moderate', icon:'⚠️', explanation:'Moderate-high glycemic burden with hyperglycemia predominance. Increase basal insulin or add second-line agent. Review carbohydrate intake and lifestyle factors.' };
+  if (gpmQ === 'Q2') return { decision:'RESTRUCTURE REGIMEN',             cls:'triage-restructure', icon:'🔄', explanation:'Concurrent hyperglycemia and hypoglycemia detected. Restructure medication schedule, review prandial insulin timing, and consider CGM-guided dose titration.' };
+  if (gpmQ === 'Q3') return { decision:'DE-INTENSIFY / REDUCE HYPO RISK', cls:'triage-deintensify', icon:'📉', explanation:'Significant hypoglycemia burden with controlled hyperglycemia. Reduce sulfonylurea or prandial insulin. Educate on nocturnal hypoglycemia, snack timing, and sick-day rules.' };
+  if (gpmQ === 'Q4' && gbi < 1) return { decision:'MAINTAIN CURRENT PLAN',    cls:'triage-maintain',    icon:'✅', explanation:'Glycemic profile is well-balanced with low burden. Continue current regimen. Reinforce dietary adherence, physical activity. Schedule follow-up in 12–16 weeks.' };
+  // ✅ CHANGE 1: Default changed from CLINICAL REVIEW REQUIRED to INTENSIFY THERAPY
+  return { decision:'INTENSIFY THERAPY', cls:'triage-urgent', icon:'🔴', explanation:'Glycemic pattern indicates need for therapy intensification. Review medication plan, adherence, lifestyle, and CGM trends. Physician-guided escalation recommended.' };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RECOMMENDATION ENGINE — CHANGE 3: GBI-based logic
+// ═══════════════════════════════════════════════════════════
+function computeRecommendation(gbi, gpmQ) {
+  // GBI > 2.0: Critical — immediate action required
+  if (gbi > 2.0) return {
+    title: 'Immediate Action Required',
+    text: 'Immediate action required with recommendation. GBI is critically elevated — urgent physician-guided escalation is needed without delay.'
+  };
+  // GBI 1–2: High burden — act within 10 days
+  if (gbi >= 1 && gbi <= 2) return {
+    title: 'Act Within 10 Days',
+    text: 'Closely monitor and consider recommendation immediately within 10 days. Glycemic burden is high — timely intervention is essential to prevent complications.'
+  };
+  // GBI 0.5–1: Moderate — consider in 4 weeks
+  if (gbi > 0.5 && gbi < 1) return {
+    title: 'Consider Recommendation in 4 Weeks',
+    text: 'Consider recommendation if target is still not achieved in 4 weeks. Monitor CGM trends closely and reassess at the next scheduled visit.'
+  };
+  // GBI < 0.5 + Q4: Well controlled — maintain
+  if (gpmQ === 'Q4' && gbi < 0.5) return {
+    title: 'Maintain Current Plan',
+    text: 'Glycemic profile is well balanced. Continue present regimen. Reinforce lifestyle and dietary adherence. Follow-up in 12–16 weeks.'
+  };
+  return {
+    title: 'Consider Recommendation in 4 Weeks',
+    text: 'Consider recommendation if target is still not achieved in 4 weeks. Monitor closely and reassess at next visit.'
+  };
+}
+
+function buildReasoning({ vh, h, tir, low, vl, hyper, hypo, hba1c, gmi, gbi, gpmQ }) {
+  const items = [];
+  if (hyper > 50)       items.push({ dot:'red',    text:`Severe hyperglycemia: ${hyper.toFixed(1)}% time above 180 mg/dL (VH: ${vh}%, H: ${h}%)` });
+  else if (hyper > 25)  items.push({ dot:'orange', text:`Moderate hyperglycemia: ${hyper.toFixed(1)}% above range` });
+  else                  items.push({ dot:'green',  text:`Hyperglycemia controlled: ${hyper.toFixed(1)}% above range` });
+
+  if (tir >= 70)        items.push({ dot:'green',  text:`TIR at ADA goal: ${tir}% (target ≥70%)` });
+  else if (tir >= 50)   items.push({ dot:'yellow', text:`TIR near target but below ADA goal: ${tir}% (goal ≥70%)` });
+  else                  items.push({ dot:'red',    text:`TIR critically below target: ${tir}% — significant gap from ≥70% goal` });
+
+  if (hypo > 10)        items.push({ dot:'red',    text:`Severe hypoglycemia risk: ${hypo.toFixed(1)}% below 70 mg/dL (VL: ${vl}%, L: ${low}%)` });
+  else if (hypo > 4)    items.push({ dot:'yellow', text:`Borderline hypoglycemia: ${hypo.toFixed(1)}% — monitor closely` });
+  else                  items.push({ dot:'green',  text:`Hypoglycemia safe: ${hypo.toFixed(1)}% below range` });
+
+  if (gbi > 2)          items.push({ dot:'red',    text:`Critical GBI: ${gbi.toFixed(3)} — immediate action required` });
+  else if (gbi > 1)     items.push({ dot:'orange', text:`High GBI: ${gbi.toFixed(3)} — therapy review needed` });
+  else if (gbi > 0.5)   items.push({ dot:'yellow', text:`Moderate GBI: ${gbi.toFixed(3)} — monitor closely` });
+  else                  items.push({ dot:'green',  text:`Low GBI: ${gbi.toFixed(3)} — excellent glycemic burden control` });
+
+  if (!isNaN(hba1c) && !isNaN(gmi)) {
+    const di = hba1c - gmi;
+    if (Math.abs(di) > 1.5) items.push({ dot:'orange', text:`HbA1c–GMI discordance (DI ${di>=0?'+':''}${di.toFixed(2)}): ${di>0?'HbA1c may overestimate glycemia':'possible hidden hyperglycemia'}` });
+    else                    items.push({ dot:'blue',   text:`HbA1c and GMI concordant (DI ${di>=0?'+':''}${di.toFixed(2)}) — lab values align with CGM` });
+  }
+
+  const qText = { Q1:'High hyper, low hypo → intensification needed', Q2:'Both hyper and hypo elevated → regimen restructure', Q3:'Controlled hyper, elevated hypo → de-intensification', Q4:'Both ranges controlled → stable management' };
+  items.push({ dot:'blue', text:`GPM ${gpmQ}: ${qText[gpmQ]}` });
+  return items;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER RESULTS
+// ═══════════════════════════════════════════════════════════
+function renderResults(r) {
+  $('results-placeholder').style.display = 'none';
+  $('results-content').style.display     = '';
+
+  $('r-name').textContent = r.name;
+  $('r-meta').textContent = [r.age ? r.age+' yrs' : null, r.gender, r.dtype ? 'Diabetes: '+r.dtype : null].filter(Boolean).join(' · ');
+  $('r-visit-tag').textContent = r.visitDate ? 'Visit: '+new Date(r.visitDate+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}) : '';
+  $('ps-hba1c').textContent = r.hba1c ? r.hba1c+'%' : '—';
+  $('ps-gmi').textContent   = r.gmi   ? r.gmi+'%'   : '—';
+  $('ps-tir').textContent   = r.tir + '%';
+  $('ps-tir').style.color   = r.tir >= 70 ? 'var(--green)' : r.tir >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+  $('cc-phenotype-value').textContent   = r.gpf;
+  $('cc-phenotype-meaning').textContent = r.gpfMeaning;
+  $('cc-phenotype-badge').innerHTML     = `<span class="metric-badge ${r.gpfBadge}">${r.gpf}</span>`;
+
+  $('cc-gbi-score').textContent = r.gbi.toFixed(2);
+  const gbiColors = { 'badge-green':'#22c55e','badge-yellow':'#d97706','badge-orange':'#ea580c','badge-red':'#dc2626' };
+  $('cc-gbi-score').style.color = gbiColors[r.gbiBadge] || 'var(--text)';
+  $('cc-gbi-badge').innerHTML   = `<span class="metric-badge ${r.gbiBadge}">${r.gbiLabel}</span>`;
+  $('cc-gbi-meaning').textContent = r.gbiMeaning;
+
+  ['Q1','Q2','Q3','Q4'].forEach(q => {
+    const el = $('cc-' + q.toLowerCase());
+    if (el) el.classList.toggle('active', r.gpmQ === q);
+  });
+  $('cc-gpm-badge').innerHTML = `<span class="metric-badge ${r.gpmBadge}">${r.gpmLabel}</span>`;
+
+  $('cc-rec-value').textContent   = r.rec.title;
+  $('cc-rec-meaning').textContent = r.rec.text;
+
+  const t = r.triage;
+  $('r-triage-card').innerHTML = `
+    <div class="triage-banner ${t.cls} triage-anim" style="margin-bottom:16px;">
+      <div class="triage-icon">${t.icon}</div>
+      <div class="triage-content">
+        <div class="triage-label">Final AI Triage Decision · GBI + GPM Engine · Powered by Vision AI</div>
+        <div class="triage-decision">${t.decision}</div>
+        <div class="triage-explain">${t.explanation}</div>
+      </div>
+    </div>`;
+
+  $('r-reasoning-list').innerHTML = r.reasoning.map(item =>
+    `<div class="reasoning-item"><div class="reasoning-dot ${item.dot}"></div><div>${item.text}</div></div>`
+  ).join('');
+
+  if (r.prevReport) {
+    $('longitudinal-card').style.display = 'block';
+    const tirDiff = (r.tir - r.prevReport.tir).toFixed(1);
+    const gbiDiff = (r.gbi - r.prevReport.gbi).toFixed(2);
+    
+    let tirHtml = tirDiff > 0 ? `<span style="color:var(--green)">↑ +${tirDiff} pp</span>` : (tirDiff < 0 ? `<span style="color:var(--red)">↓ ${Math.abs(tirDiff)} pp</span>` : 'Stable');
+    let gbiHtml = gbiDiff > 0 ? `<span style="color:var(--red)">↑ +${gbiDiff}</span>` : (gbiDiff < 0 ? `<span style="color:var(--green)">↓ ${Math.abs(gbiDiff)}</span>` : 'Stable');
+
+    $('longitudinal-content').innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom: 10px; font-size: 13px;">
+        <div><strong>Previous Visit:</strong> ${new Date(r.prevReport.timestamp).toLocaleDateString('en-IN')}</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Metric</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead>
+          <tbody>
+            <tr><td>TIR</td><td>${r.prevReport.tir}%</td><td>${r.tir}%</td><td>${tirHtml}</td></tr>
+            <tr><td>GBI</td><td>${r.prevReport.gbi.toFixed(2)}</td><td>${r.gbi.toFixed(2)}</td><td>${gbiHtml}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+        <strong>AI Insight:</strong> Compared with the previous assessment, time in range ${tirDiff > 0 ? 'increased' : 'decreased'} while estimated glycemic burden ${gbiDiff > 0 ? 'increased' : 'decreased'}.
+      </div>
+    `;
+  } else {
+    $('longitudinal-card').style.display = 'none';
+  }
+
+  $('approve-btn').textContent = r.status === 'Reviewed' ? '✓ Approved' : '✓ Approve & Finalize';
+  $('approve-btn').disabled = r.status === 'Reviewed';
+
+  $('def-phenotype-text').textContent = r.gpfMeaning;
+
+  const zones = [['vh',r.vh],['h',r.h],['tir',r.tir],['low',r.low],['vl',r.vl]];
+  zones.forEach(([k,v]) => {
+    setTimeout(() => { $('bar-'+k).style.width = v+'%'; }, 150);
+    $('pct-'+k).textContent = v + '%';
+  });
+  buildDonut(r);
+}
+
+function approveReport() {
+  if (currentResult) {
+    currentResult.status = 'Reviewed';
+    $('approve-btn').textContent = '✓ Approved';
+    $('approve-btn').disabled = true;
+    
+    if (savedReports.length > 0 && savedReports[0].id) {
+       savedReports[0].status = 'Reviewed';
+       if(window.firebaseDb) {
+         window.firebaseSet(window.firebaseRef(window.firebaseDb, 'reports/' + savedReports[0].id + '/status'), 'Reviewed');
+       }
+    }
+    showToast('👨‍⚕️ Clinician review finalized and logged.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DONUT CHART
+// ═══════════════════════════════════════════════════════════
+function buildDonut(r) {
+  if (donutChart) donutChart.destroy();
+  const ctx = $('chart-donut').getContext('2d');
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Very High','High','Target','Low','Very Low'],
+      datasets: [{
+        data: [r.vh, r.h, r.tir, r.low, r.vl],
+        backgroundColor: ['#ef4444','#f97316','#22c55e','#eab308','#dc2626'],
+        borderColor: isDark ? '#111827' : '#ffffff',
+        borderWidth: 3, hoverOffset: 7
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { position:'bottom', labels:{ color: isDark ? '#8ba3bc' : '#64748b', font:{size:11,family:'DM Sans'}, padding:8, boxWidth:8 } },
+        tooltip: { callbacks:{ label: c => ' '+c.label+': '+c.raw+'%' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE / LOAD / EXPORT (FIREBASE)
+// ═══════════════════════════════════════════════════════════
+let savedReports = [];
+
+// Fetch initial reports from Firebase
+setTimeout(() => {
+  if(window.firebaseDb) {
+    const reportsRef = window.firebaseRef(window.firebaseDb, 'reports');
+    window.firebaseGet(reportsRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        savedReports = Object.keys(data).map(key => ({ id: key, ...data[key] })).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+        updateReportBadge();
+        if ($('nav-current-page').textContent === 'reports') renderReportsTable();
+      }
+    }).catch(e => console.error("Firebase get error", e));
+  }
+}, 1000);
+
+function saveReport() {
+  if (!currentResult) { alert('No assessment data to save. Please calculate metrics first.'); return; }
+  _saveReport(currentResult);
+  showToast('✅ Assessment saved to Firebase Reports');
+}
+
+function _saveReport(r) {
+  if (!window.firebaseDb) {
+    // Fallback if firebase not ready
+    savedReports.unshift(JSON.parse(JSON.stringify(r)));
+    updateReportBadge();
+    return;
+  }
+  
+  const reportsListRef = window.firebaseRef(window.firebaseDb, 'reports');
+  const newReportRef = window.firebasePush(reportsListRef);
+  const reportData = JSON.parse(JSON.stringify(r));
+  window.firebaseSet(newReportRef, reportData).then(() => {
+    savedReports.unshift({ id: newReportRef.key, ...reportData });
+    updateReportBadge();
+    if ($('nav-current-page').textContent === 'reports') renderReportsTable();
+  }).catch(e => {
+    console.error("Firebase save error", e);
+    showToast('❌ Failed to save to Firebase');
+  });
+}
+
+function updateReportBadge() {
+  if ($('report-count-badge')) $('report-count-badge').textContent = savedReports.length;
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0b2545;color:#fff;padding:11px 18px;border-radius:9px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 12px 36px rgba(0,0,0,0.25);animation:dropdownIn 0.3s ease;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function renderReportsTable() {
+  const wrap = $('reports-table-wrap');
+  if (!savedReports.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-title">No Reports Saved</div><div class="empty-text">Calculate and save assessments from the Dashboard.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Patient</th><th>Date</th><th>Type</th><th>TIR</th><th>GBI</th><th>Phenotype</th><th>GPM</th><th>Triage Decision</th></tr></thead>
+    <tbody>${savedReports.map(r => `<tr>
+      <td style="font-weight:600;">${r.name}</td>
+      <td style="color:var(--text-muted);font-size:11.5px;">${new Date(r.timestamp).toLocaleDateString('en-IN')}</td>
+      <td><span class="table-chip badge-blue metric-badge">${r.dtype || '—'}</span></td>
+      <td style="font-weight:700;color:var(--green);font-family:'DM Mono',monospace;">${r.tir}%</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;">${r.gbi.toFixed(2)}</td>
+      <td><span class="table-chip metric-badge ${r.gpfBadge}">${r.gpf}</span></td>
+      <td><span class="table-chip metric-badge ${r.gpmBadge}">${r.gpmQ}</span></td>
+      <td style="font-size:11.5px;">${r.triage ? r.triage.decision : '—'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function clearAllReports() {
+  if (confirm('Clear all saved reports? This cannot be undone.')) {
+    if (window.firebaseDb) {
+       const reportsRef = window.firebaseRef(window.firebaseDb, 'reports');
+       window.firebaseSet(reportsRef, null).then(() => {
+         savedReports = [];
+         renderReportsTable();
+         updateReportBadge();
+         showToast('🗑️ All reports cleared from Firebase');
+       });
+    } else {
+      savedReports = [];
+      renderReportsTable();
+      updateReportBadge();
+      showToast('🗑️ All reports cleared locally');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT PDF
+// ═══════════════════════════════════════════════════════════
+function exportPDF() {
+  if (!currentResult) { alert('Please calculate metrics first.'); return; }
+  const r     = currentResult;
+  const today = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  const pdfDiv = document.createElement('div');
+  pdfDiv.style.cssText = 'font-family:Arial,sans-serif;color:#1e293b;background:#fff;padding:24px;max-width:740px;';
+  const tBg = r.triage.cls.includes('urgent') ? '#fef2f2' : r.triage.cls.includes('critical') ? '#fff7ed' : r.triage.cls.includes('maintain') ? '#f0fdf4' : r.triage.cls.includes('deintensify') ? '#f0fdfa' : '#eff6ff';
+  const tBd = r.triage.cls.includes('urgent') ? '#fca5a5' : r.triage.cls.includes('critical') ? '#fdba74' : r.triage.cls.includes('maintain') ? '#86efac' : r.triage.cls.includes('deintensify') ? '#99f6e4' : '#93c5fd';
+  pdfDiv.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:2px solid #1a6fc4;margin-bottom:20px;">
+      <div style="background:linear-gradient(135deg,#1a6fc4,#0d9488);width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">🩺</div>
+      <div><div style="font-size:18px;font-weight:800;color:#0b2545;">NayaGlyco AI v3.0</div><div style="font-size:12px;color:#64748b;">CGM Clinical Decision Report · Powered by Vision AI</div></div>
+      <div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:#64748b;">Generated: ${today}</div></div>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2eaf3;border-radius:10px;padding:14px 18px;margin-bottom:18px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:8px;">Patient Summary</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div><div style="font-size:10px;color:#94a3b8;">Name</div><div style="font-weight:700;">${r.name}</div></div>
+        <div><div style="font-size:10px;color:#94a3b8;">Age / Gender</div><div style="font-weight:700;">${r.age||'—'} / ${r.gender||'—'}</div></div>
+        <div><div style="font-size:10px;color:#94a3b8;">Diabetes Type</div><div style="font-weight:700;">${r.dtype||'—'}</div></div>
+        <div><div style="font-size:10px;color:#94a3b8;">HbA1c</div><div style="font-weight:700;">${r.hba1c ? r.hba1c+'%' : '—'}</div></div>
+        <div><div style="font-size:10px;color:#94a3b8;">GMI</div><div style="font-weight:700;">${r.gmi ? r.gmi+'%' : '—'}</div></div>
+        <div><div style="font-size:10px;color:#94a3b8;">TIR</div><div style="font-weight:700;color:#059669;">${r.tir}%</div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px;">🧬 Glycemic Phenotype</div>
+        <div style="font-size:16px;font-weight:800;">${r.gpf}</div>
+        <div style="font-size:11px;color:#334155;margin-top:4px;">${r.gpfMeaning}</div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px;">⚖️ Glycemic Burden Index</div>
+        <div style="font-size:28px;font-weight:800;color:#dc2626;">${r.gbi.toFixed(2)}</div>
+        <div style="font-size:11px;color:#334155;margin-top:2px;">${r.gbiLabel} · ${r.gbiMeaning}</div>
+      </div>
+    </div>
+    <div style="background:${tBg};border:2px solid ${tBd};border-radius:10px;padding:16px 20px;margin-bottom:18px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:4px;">Final AI Triage Decision · GBI + GPM Engine · Powered by Vision AI</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:7px;">${r.triage.icon} ${r.triage.decision}</div>
+      <div style="font-size:12.5px;line-height:1.6;">${r.triage.explanation}</div>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2eaf3;border-radius:10px;padding:14px 18px;margin-bottom:18px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:4px;">💊 Consideration of Recommendation</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:5px;">${r.rec.title}</div>
+      <div style="font-size:12.5px;line-height:1.6;color:#334155;">${r.rec.text}</div>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2eaf3;border-radius:10px;padding:14px 18px;margin-bottom:18px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:10px;">CGM Zone Distribution</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;">
+        ${[['Very High',r.vh,'#ef4444'],['High',r.h,'#f97316'],['Target',r.tir,'#22c55e'],['Low',r.low,'#eab308'],['Very Low',r.vl,'#dc2626']].map(([l,v,c])=>`<div style="background:#fff;border:1px solid ${c}40;border-radius:7px;padding:10px 6px;"><div style="color:${c};font-size:20px;font-weight:800;">${v}%</div><div style="font-size:10px;color:#64748b;margin-top:2px;">${l}</div></div>`).join('')}
+      </div>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 18px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:8px;">🧠 Clinical Reasoning</div>
+      ${r.reasoning.map(item=>`<div style="font-size:12px;margin-bottom:4px;line-height:1.55;">• ${item.text}</div>`).join('')}
+    </div>
+    <div style="margin-top:20px;padding-top:14px;border-top:2px solid #e2eaf3;text-align:center;font-size:10.5px;color:#94a3b8;line-height:1.8;">
+      <strong>NayaGlyco AI v3.0</strong> — PDF.js + Vision Vision AI · CGM Clinical Decision Support<br>
+      For clinical support only. This report does not replace physician judgment. ADA/ATTD 2023 Guidelines.<br>
+      Generated: ${today}
+    </div>`;
+  document.body.appendChild(pdfDiv);
+  html2pdf().set({
+    margin: [8,8],
+    filename: 'NayaGlyco_'+r.name.replace(/\s/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.pdf',
+    image: {type:'jpeg',quality:0.96},
+    html2canvas: {scale:2,useCORS:true,backgroundColor:'#ffffff'},
+    jsPDF: {unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(pdfDiv).save().then(() => document.body.removeChild(pdfDiv));
+}
+</script>
+</body>
+</html>
