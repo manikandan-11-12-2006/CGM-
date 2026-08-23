@@ -11,9 +11,9 @@ app.use(express.json({ limit: '50mb' }));
 
 app.use(express.static(path.join(__dirname, '..')));
 
-const Vision_API_KEY = process.env.Vision_API_KEY;
-const Vision_API_URL = 'https://api.Vision.com/openai/v1/chat/completions';
-const Vision_VISION_MODEL = 'qwen/qwen3.6-27b';
+const VISION_API_KEY = process.env.VISION_API_KEY;
+const VISION_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const VISION_VISION_MODEL = 'qwen/qwen3.6-27b';
 
 app.post('/api/extract', async (req, res) => {
   try {
@@ -37,14 +37,14 @@ ZONE DEFINITIONS used in most CGM reports:
 
 Return ONLY the JSON object. No markdown fences. No extra text.`;
 
-    const response = await fetch(Vision_API_URL, {
+    const response = await fetch(VISION_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Vision_API_KEY}`,
+        'Authorization': `Bearer ${VISION_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: Vision_VISION_MODEL,
+        model: VISION_VISION_MODEL,
         max_tokens: 4096,
         messages: [
           { role: 'system', content: systemPrompt },
