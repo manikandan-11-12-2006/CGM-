@@ -26,7 +26,7 @@ app.post('/api/extract', async (req, res) => {
 Your task is to extract specific glycemic metrics from a CGM report image (rendered from a PDF).
 
 Extract EXACTLY these values and return ONLY valid JSON with no markdown, no explanation, no code fences:
-{"name":null,"age":null,"diabetes_type":null,"vh":null,"h":null,"tir":null,"low":null,"vl":null,"avg":null,"gmi":null}
+{"name":null,"age":null,"diabetes_type":null,"vh":null,"h":null,"tir":null,"low":null,"vl":null,"avg":null,"gmi":null,"hba1c":null}
 
 ZONE DEFINITIONS used in most CGM reports:
 - Very High (VH): glucose > 250 mg/dL
@@ -34,6 +34,7 @@ ZONE DEFINITIONS used in most CGM reports:
 - Target/TIR: glucose 70-180 mg/dL (Time In Range)
 - Low: glucose 54-69 mg/dL
 - Very Low (VL): glucose < 54 mg/dL
+- HbA1c: Look for "HbA1c" or "A1c" or "Hemoglobin A1c" (often not present on AGP reports, return null if not explicitly found).
 
 Return ONLY the JSON object. No markdown fences. No extra text.`;
 
@@ -96,6 +97,6 @@ Return ONLY the JSON object. No markdown fences. No extra text.`;
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`Backend server running on http://127.0.0.1:${PORT}`);
 });
