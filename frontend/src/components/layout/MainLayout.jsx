@@ -24,21 +24,16 @@ export default function MainLayout() {
     const r = analysis;
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
     
-    // We create a temporary div for PDF generation identical to the old index.html approach
-    const pdfDiv = document.createElement('div');
-
     const { generatePDFTemplate } = await import('../../utils/pdfTemplate');
-    pdfDiv.innerHTML = generatePDFTemplate(r, today, clinicProfile);
-    
-    document.body.appendChild(pdfDiv);
+    const htmlString = generatePDFTemplate(r, today, clinicProfile);
     
     html2pdf().set({
       margin: [8,8],
       filename: 'NayaGlyco_'+r.name.replace(/\s/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.pdf',
-      image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(pdfDiv).save().then(() => document.body.removeChild(pdfDiv));
+    }).from(htmlString).save();
   };
 
   return (
