@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useCGM } from '../../hooks/useCGM';
-import { pdfToImageBase64 } from '../../services/pdfService';
-import { callVisionVision } from '../../services/api';
+import { callOcrExtract } from '../../services/api';
 
 export default function PdfUpload() {
   const { setPatient, setCgmData } = useCGM();
@@ -16,60 +15,69 @@ export default function PdfUpload() {
     if (!file) return;
 
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isPDF) {
-      alert('⚠️ Only PDF files are allowed.\n\nPlease upload a CGM report in PDF format.');
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp)$/i.test(file.name);
+
+    if (!isPDF && !isImage) {
+      alert('⚠️ Only PDF and image files are allowed.\n\nPlease upload a CGM report document.');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     setIsAiReading(true);
-    setAiStatus({ type: 'reading', title: 'Vision AI Processing', body: 'Reading your CGM report PDF and extracting all glycemic metrics…', chips: [] });
+    setAiStatus({ 
+      type: 'reading', 
+      title: 'Processing Report', 
+      body: 'Reading CGM report and extracting clinical metrics…', 
+      chips: [] 
+    });
     setProgress(20);
-    setStepText('Rendering PDF first page with PDF.js…');
+    setStepText('Rendering report canvas for optical character recognition…');
 
     try {
-      const imageBase64 = await pdfToImageBase64(file);
-      
-      setProgress(45);
-      setStepText('Sending image to Vision AI…');
-      
-      const extractedData = await callVisionVision(imageBase64);
-      
-      setProgress(85);
-      setStepText('Parsing extracted values…');
+      const extractedData = await callOcrExtract(file, (prog, txt) => {
+        setProgress(prog);
+        setStepText(txt);
+      });
+
+      setProgress(90);
+      setStepText('Parsing clinical metrics & zone distributions…');
 
       if (extractedData && extractedData.found > 0) {
         autoFill(extractedData);
         setProgress(100);
-        setStepText('Done! All values extracted successfully.');
+        setStepText('Done! All clinical values extracted successfully.');
 
         const chips = [];
-        if (extractedData.name) chips.push('👤 ' + extractedData.name + ' (Conf: 99%)');
-        if (extractedData.vh !== null) chips.push('VH: ' + extractedData.vh + '% (Conf: 98%)');
-        if (extractedData.h !== null) chips.push('H: ' + extractedData.h + '% (Conf: 95%)');
-        if (extractedData.tir !== null) chips.push('TIR: ' + extractedData.tir + '% (Conf: 97%)');
-        if (extractedData.low !== null) chips.push('Low: ' + extractedData.low + '% (Conf: 96%)');
-        if (extractedData.vl !== null) chips.push('VL: ' + extractedData.vl + '% (Conf: 99%)');
-        if (extractedData.avg !== null) chips.push('MG: ' + extractedData.avg + ' mg/dL (Conf: 98%)');
-        if (extractedData.gmi !== null) chips.push('GMI: ' + extractedData.gmi + '% (Conf: 94%)');
-        if (extractedData.hba1c !== null) chips.push('HbA1c: ' + extractedData.hba1c + '% (Conf: 95%)');
+        if (extractedData.name) chips.push('👤 ' + extractedData.name);
+        if (extractedData.age !== null && extractedData.age !== undefined) chips.push('🎂 Age: ' + extractedData.age + ' yrs');
+        if (extractedData.gender) chips.push('⚧ ' + extractedData.gender);
+        if (extractedData.diabetes_type) chips.push('🩺 ' + extractedData.diabetes_type);
+        if (extractedData.visit_date) chips.push('📅 ' + extractedData.visit_date);
+        if (extractedData.vh !== null && extractedData.vh !== undefined) chips.push('VH: ' + extractedData.vh + '%');
+        if (extractedData.h !== null && extractedData.h !== undefined) chips.push('H: ' + extractedData.h + '%');
+        if (extractedData.tir !== null && extractedData.tir !== undefined) chips.push('TIR: ' + extractedData.tir + '%');
+        if (extractedData.low !== null && extractedData.low !== undefined) chips.push('Low: ' + extractedData.low + '%');
+        if (extractedData.vl !== null && extractedData.vl !== undefined) chips.push('VL: ' + extractedData.vl + '%');
+        if (extractedData.avg !== null && extractedData.avg !== undefined) chips.push('MG: ' + extractedData.avg + ' mg/dL');
+        if (extractedData.gmi !== null && extractedData.gmi !== undefined) chips.push('GMI: ' + extractedData.gmi + '%');
+        if (extractedData.hba1c !== null && extractedData.hba1c !== undefined) chips.push('HbA1c: ' + extractedData.hba1c + '%');
 
         setAiStatus({
           type: 'success',
-          title: `✨ Vision AI Extracted ${extractedData.found} Values`,
-          body: 'AI-generated extraction complete. Verify values in the form below, modify if needed, then click Calculate Analysis.',
+          title: `✨ Extracted ${extractedData.found} Values`,
+          body: 'Document analysis complete. Verify values in the form below, modify if needed, then click Calculate Analysis.',
           chips
         });
         setTimeout(() => setIsAiReading(false), 800);
       } else {
-        throw new Error('No CGM values could be extracted from the PDF. Please enter values manually.');
+        throw new Error('No CGM values could be extracted from the document. Please enter values manually.');
       }
     } catch (err) {
-      console.error('Vision AI read error:', err);
+      console.error('Document read error:', err);
       setIsAiReading(false);
       setAiStatus({
         type: 'error',
-        title: 'Vision AI Extraction Failed',
+        title: 'Document Extraction Failed',
         body: `Could not extract values: ${err.message || 'Unknown error'}. Please enter values manually below.`,
         chips: []
       });
@@ -81,20 +89,23 @@ export default function PdfUpload() {
   const autoFill = (ex) => {
     setPatient(prev => ({
       ...prev,
-      name: prev.name || ex.name || '',
-      type: prev.type || mapDiabetesType(ex.diabetes_type),
-      hba1c: (ex.hba1c != null) ? ex.hba1c : ((ex.gmi != null) ? ex.gmi : prev.hba1c)
+      name: (ex.name != null && ex.name !== '') ? ex.name : prev.name,
+      age: (ex.age != null && ex.age !== '') ? ex.age : prev.age,
+      gender: (ex.gender != null && ex.gender !== '') ? ex.gender : prev.gender,
+      type: (ex.diabetes_type != null && ex.diabetes_type !== '') ? mapDiabetesType(ex.diabetes_type) : prev.type,
+      hba1c: (ex.hba1c != null && ex.hba1c !== '') ? ex.hba1c : ((ex.gmi != null && ex.gmi !== '') ? ex.gmi : prev.hba1c),
+      visitDate: (ex.visit_date != null && ex.visit_date !== '') ? ex.visit_date : (ex.visitDate != null ? ex.visitDate : prev.visitDate)
     }));
     
     setCgmData(prev => ({
       ...prev,
-      vh: ex.vh !== null ? ex.vh : prev.vh,
-      h: ex.h !== null ? ex.h : prev.h,
-      tir: ex.tir !== null ? ex.tir : prev.tir,
-      low: ex.low !== null ? ex.low : prev.low,
-      vl: ex.vl !== null ? ex.vl : prev.vl,
-      avg: ex.avg !== null ? ex.avg : prev.avg,
-      gmi: ex.gmi !== null ? ex.gmi : prev.gmi,
+      vh: (ex.vh != null && ex.vh !== '') ? ex.vh : prev.vh,
+      h: (ex.h != null && ex.h !== '') ? ex.h : prev.h,
+      tir: (ex.tir != null && ex.tir !== '') ? ex.tir : prev.tir,
+      low: (ex.low != null && ex.low !== '') ? ex.low : prev.low,
+      vl: (ex.vl != null && ex.vl !== '') ? ex.vl : prev.vl,
+      avg: (ex.avg != null && ex.avg !== '') ? ex.avg : prev.avg,
+      gmi: (ex.gmi != null && ex.gmi !== '') ? ex.gmi : prev.gmi,
     }));
   };
 
@@ -106,14 +117,14 @@ export default function PdfUpload() {
       'lada':'LADA','mody':'MODY','gdm':'GDM',
       'other':'Other','gestational':'GDM'
     };
-    return typeMap[type.toLowerCase()] || 'Other';
+    return typeMap[type.toLowerCase()] || type;
   };
 
   return (
     <div className="form-section">
       <div className="form-section-title">
         📄 Auto-Read CGM Report
-        <span className="ai-badge-inline">✨ Vision AI</span>
+        <span className="ai-badge-inline">✨ AI Extractor</span>
       </div>
 
       <div 
@@ -123,16 +134,16 @@ export default function PdfUpload() {
         {isAiReading && <div className="ai-reading-pulse"></div>}
         <div className="pdf-upload-icon">{isAiReading ? '🧠' : (aiStatus?.type === 'success' ? '✅' : '📂')}</div>
         <div className="pdf-upload-title">
-          {isAiReading ? 'Vision AI Reading PDF…' : (aiStatus?.type === 'success' ? 'PDF Successfully Read' : 'Upload CGM Report PDF')}
+          {isAiReading ? 'Reading CGM Report…' : (aiStatus?.type === 'success' ? 'Report Successfully Read' : 'Upload CGM Report (PDF / Image)')}
         </div>
         <div className="pdf-upload-sub">
-          {isAiReading ? 'Converting PDF page to image, then sending to Vision AI' : (aiStatus?.type === 'success' ? 'Click to upload a different PDF' : 'Click or drag & drop · Vision AI extracts all values automatically (PDF only)')}
+          {isAiReading ? 'Extracting patient details, 5-zone CGM distribution, and glycemic metrics…' : (aiStatus?.type === 'success' ? 'Click to upload a different report' : 'Click or drag & drop · Auto-extracts patient details & glucose metrics')}
         </div>
       </div>
       <input 
         type="file" 
         ref={fileInputRef} 
-        accept=".pdf" 
+        accept=".pdf, .png, .jpg, .jpeg, .webp" 
         style={{ display: 'none' }} 
         onChange={handleFileUpload} 
       />
@@ -154,13 +165,13 @@ export default function PdfUpload() {
         </div>
       )}
 
-      {/* AI Overlay Modal */}
+      {/* Overlay Modal */}
       {isAiReading && (
         <div className="ai-overlay show">
           <div className="ai-card">
             <div className="ai-brain">🧠</div>
-            <div className="ai-card-title">Vision AI Reading CGM Report</div>
-            <div className="ai-card-sub">Vision AI is analysing your PDF and extracting all glycemic metrics automatically</div>
+            <div className="ai-card-title">Reading CGM Report</div>
+            <div className="ai-card-sub">Extracting patient details, 5-zone CGM distribution, and glycemic metrics</div>
             <div className="ai-progress-track">
               <div className="ai-progress-fill" style={{ width: `${progress}%` }}></div>
             </div>
