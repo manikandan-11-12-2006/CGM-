@@ -22,7 +22,7 @@ A Continuous Glucose Monitoring (CGM) report analysis dashboard. It uses a **Dua
 
 Before running the application, make sure you have:
 - **Node.js**: v18.0.0 or higher ([Download Node.js](https://nodejs.org/))
-- **Python** (Optional, for backend engine): Python 3.10 or 3.11 ([Download Python](https://www.python.org/))
+- **Python**: Python 3.10 or 3.11 (Python 3.11 recommended) ([Download Python](https://www.python.org/))
 
 ---
 
@@ -68,41 +68,117 @@ http://localhost:5173
 
 ---
 
-## 🛠️ Full-Stack Setup (Optional Python Backend)
+## 🧠 PaddleOCR-VL-1.6 Model & Backend Installation Guide
 
-If you wish to run the local Python PaddleOCR backend service alongside the frontend:
+Follow these step-by-step instructions to set up **PaddleOCR-VL-1.6** and its dependencies in an isolated virtual environment.
 
-### 1. Setup Python Backend Environment
+### 1. Create a Virtual Environment
 
-```bash
-cd backend
+This is strongly recommended so PaddleOCR doesn't conflict with existing project dependencies.
 
-# Create virtual environment
+**On Windows:**
+```powershell
 python -m venv .venv
-
-# Activate virtual environment
-# On Windows:
 .venv\Scripts\activate
-# On Linux / Mac:
-source .venv/bin/activate
-
-# Install required Python packages
-pip install fastapi uvicorn pypdfium2 pillow numpy paddleocr
 ```
 
-### 2. Start the Backend Server
+**On Linux / Ubuntu / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
+You should now see something similar to:
+```
+(.venv) D:\your-project>
+```
+
+---
+
+### 2. Upgrade pip
+
+```bash
+python -m pip install --upgrade pip
+```
+
+---
+
+### 3. Install PaddlePaddle (Version 3.2.1)
+
+The installation command depends on whether you're using CPU or an NVIDIA GPU.
+
+> ⚠️ **Note**: Do not install both CPU and GPU PaddlePaddle packages. Install only one.
+
+#### Option A — CPU (Standard Setup)
+If you don't have an NVIDIA GPU:
+```bash
+python -m pip install paddlepaddle==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+```
+
+#### Option B — NVIDIA GPU (CUDA 12.6)
+For an NVIDIA GPU with CUDA 12.6:
+```bash
+python -m pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+```
+
+*(The official PaddleOCR-VL-1.6 setup specifically uses PaddlePaddle 3.2.1).*
+
+---
+
+### 4. Install PaddleOCR-VL & Document Parser
+
+For PaddleOCR-VL, install the document parser dependencies:
+
+```bash
+python -m pip install -U "paddleocr[doc-parser]>=3.6.0"
+pip install fastapi uvicorn pypdfium2 pillow numpy
+```
+
+---
+
+### 5. Verify PaddlePaddle Installation
+
+Run:
+```bash
+python -c "import paddle; print(paddle.__version__)"
+```
+
+You should see:
+```
+3.2.1
+```
+
+If you are using an NVIDIA GPU, verify GPU detection:
+```bash
+python -c "import paddle; print(paddle.device.get_device())"
+```
+- If GPU is active, you will see: `gpu:0`
+- If it says `cpu`, Paddle is running in CPU mode.
+
+---
+
+### 6. Verify PaddleOCR Installation
+
+Run:
+```bash
+python -c "import paddleocr; print('PaddleOCR installed successfully')"
+```
+
+If you see:
+```
+PaddleOCR installed successfully
+```
+the package is installed and ready to process CGM reports.
+
+---
+
+### 7. Start the Python OCR Server
+
+From the `backend` directory:
 ```bash
 python server.py
 ```
-*(Backend runs on `http://127.0.0.1:3000`)*
-
-### 3. Start the Frontend Server (in a new terminal)
-
-```bash
-cd frontend
-npm run dev
-```
+*(Runs on `http://127.0.0.1:3000`)*
 
 ---
 
@@ -132,7 +208,7 @@ npm run dev
 ```
 CGM--main/
 ├── backend/
-│   ├── cgm_ocr_engine.py       # Local Python OCR & report parser
+│   ├── cgm_ocr_engine.py       # Local Python PaddleOCR & report parser
 │   ├── server.js               # Node.js backend runner
 │   ├── server.py               # Standalone FastAPI Python server
 │   └── package.json            # Backend Node configuration
@@ -149,7 +225,7 @@ CGM--main/
 │   ├── package.json            # Frontend dependencies & scripts
 │   └── vite.config.js          # Vite build configuration
 ├── sample reports/             # Sample CGM reports for testing
-└── README.md                   # Project documentation
+└── README.md                   # Project documentation & setup guide
 ```
 
 ---
